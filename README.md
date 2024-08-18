@@ -6,3 +6,6 @@ This application gives 4j School District employees a convenient way to fill in 
  - Uses [pre-computed distances between school buildings](https://github.com/inductivekickback/mileage/)
  - A vanilla copy of the expense report PDF is bundled with the application and a new PDF is created every time it's ready to be submitted -- this precludes annoying errors that can happen when the same PDF is edited multiple times.
  - Auto-complete is enabled for school and purpose columns
+
+### Requirements
+Tested on macOS Big Sur and newer (Intel or Apple silicon).
