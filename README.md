@@ -8,4 +8,4 @@ This application gives 4j School District employees a convenient way to fill in 
  - Auto-complete is enabled for school and purpose columns
 
 ### Requirements
-Tested on macOS Big Sur and newer (Intel or Apple silicon).
+Tested on macOS Big Sur and newer (Intel and Apple silicon).
