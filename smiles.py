@@ -66,7 +66,7 @@ class AboutDialog(QDialog):
     """A simple 'About' dialog."""
 
     QUOTES = (("Spread the weird!",),("We've got your back!",), ("Stay curious!",))
-    QUOTE_AUTHOR = "-- Mentor Team"
+    QUOTE_AUTHOR = "-- The Mentor Team"
 
     TEXT_COLORS = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#8B00FF']
 
