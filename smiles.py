@@ -70,7 +70,6 @@ class AboutDialog(QDialog):
 
     TEXT_COLORS = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#8B00FF']
 
-
     def __init__(self):
         super().__init__()
 
@@ -192,10 +191,8 @@ class AboutDialog(QDialog):
 class SettingsDialog(QDialog):
     """Maintains a simple 'settings' data structure across multiple platforms."""
 
-
     SETTINGS = ["Name", "Employee Number", "Building/Department", "In-District Mileage Account",
                 "Out-of-District Mileage Account", "Administrator's Name"]
-
 
     def __init__(self, settings):
         super().__init__()
@@ -264,7 +261,6 @@ class SettingsDialog(QDialog):
 class MainWindow(QMainWindow):
     """Presents a table of QDateEdit and QLineEdit widgets."""
 
-
     ROW_COUNT = 11
     COL_COUNT = 6
     MAX_ROWS = 45
@@ -288,7 +284,6 @@ class MainWindow(QMainWindow):
     ERROR_CELL_COLOR = 'red'
     EMPTY_CELL_COLOR = 'gray'
     DATE_STR_FORMAT = "MM/dd/yy"
-
 
     def __init__(self, data, settings):
         super().__init__()
