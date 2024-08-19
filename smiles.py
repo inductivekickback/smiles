@@ -114,13 +114,37 @@ class AboutDialog(QDialog):
 
         right_layout.addWidget(QLabel(""))
 
-        label = QLabel("Distance calculation:\tgithub.com/inductivekickback/mileage",
-                            alignment=Qt.AlignmentFlag.AlignLeft)
-        right_layout.addWidget(label)
+        hbox = QHBoxLayout()
 
-        label = QLabel("Application:\t\tgithub.com/inductivekickback/smiles",
-                            alignment=Qt.AlignmentFlag.AlignLeft)
-        right_layout.addWidget(label)
+        vbox = QVBoxLayout()
+        label = QLabel("Distance calculation:", alignment=Qt.AlignmentFlag.AlignRight)
+        vbox.addWidget(label)
+        label = QLabel("Application:", alignment=Qt.AlignmentFlag.AlignRight)
+        vbox.addWidget(label)
+        widget = QWidget()
+        widget.setLayout(vbox)
+        hbox.addWidget(widget)
+
+        vbox = QVBoxLayout()
+        label = QLabel("<a href='https://github.com/inductivekickback/mileage'>" +
+            "github.com/inductivekickback/mileage</a>", alignment=Qt.AlignmentFlag.AlignLeft)
+        label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction |
+                                            Qt.TextInteractionFlag.LinksAccessibleByMouse)
+        label.setOpenExternalLinks(True)
+        vbox.addWidget(label)
+        label = QLabel("<a href='https://github.com/inductivekickback/smiles'>" +
+            "github.com/inductivekickback/smiles</a>", alignment=Qt.AlignmentFlag.AlignLeft)
+        label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction |
+                                            Qt.TextInteractionFlag.LinksAccessibleByMouse)
+        label.setOpenExternalLinks(True)
+        vbox.addWidget(label)
+        widget = QWidget()
+        widget.setLayout(vbox)
+        hbox.addWidget(widget)
+
+        widget = QWidget()
+        widget.setLayout(hbox)
+        right_layout.addWidget(widget)
 
         right_layout.addStretch(1)
 
