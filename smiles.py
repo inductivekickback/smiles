@@ -152,8 +152,7 @@ class AboutDialog(QDialog):
         font.setPointSize(default_font_size + 10)
         quote = self.QUOTES[random.randrange(0, len(self.QUOTES))]
         for line in quote:
-            text = AboutDialog._to_rainbow_text(line)
-            label = QLabel(text , alignment=Qt.AlignmentFlag.AlignCenter)
+            label = QLabel(line , alignment=Qt.AlignmentFlag.AlignCenter)
             label.setFont(font)
             label.setStyleSheet("border: none;")
             quote_layout.addWidget(label)
