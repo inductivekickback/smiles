@@ -90,6 +90,8 @@ class AboutDialog(QDialog):
         label = QLabel("medley_r@4j.lane.edu", alignment=Qt.AlignmentFlag.AlignCenter)
         left_layout.addWidget(label)
 
+        left_layout.addSpacing(50)
+
         current_font = label.font()
         default_font_size = current_font.pointSize()
 
@@ -100,7 +102,6 @@ class AboutDialog(QDialog):
 
         right_layout = QVBoxLayout()
 
-        right_layout.addStretch(1)
         label = QLabel(f"{APP_NAME} v{__version__} ({__date__})",
                             alignment=Qt.AlignmentFlag.AlignCenter)
         font.setPointSize(default_font_size + 10)
@@ -111,8 +112,6 @@ class AboutDialog(QDialog):
         font.setPointSize(default_font_size + 5)
         label.setFont(font)
         right_layout.addWidget(label)
-
-        right_layout.addWidget(QLabel(""))
 
         hbox = QHBoxLayout()
 
@@ -146,8 +145,6 @@ class AboutDialog(QDialog):
         widget.setLayout(hbox)
         right_layout.addWidget(widget)
 
-        right_layout.addStretch(1)
-
         quote_layout = QVBoxLayout(self)
         font.setPointSize(default_font_size + 10)
         quote = self.QUOTES[random.randrange(0, len(self.QUOTES))]
@@ -172,7 +169,7 @@ class AboutDialog(QDialog):
 
         right_layout.addWidget(quote_container)
 
-        right_layout.addStretch(2)
+        right_layout.addSpacing(50)
 
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
         button_box.button(QDialogButtonBox.StandardButton.Ok).setDefault(True)
