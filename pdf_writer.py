@@ -14,6 +14,10 @@ with the use or inability to use the software.
 """
 import fitz
 
+
+__version__ = "1.0.0"
+__date__ = "Aug '24"
+
 NUM_COLS_PER_LINE = 6
 NUM_ROWS_PAGE_1 = 11
 NUM_ROWS_PAGE_X = 34

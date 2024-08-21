@@ -750,7 +750,6 @@ class SmileApp(QApplication):
         self._mainWindow.show()
 
     def event(self, event: QEvent):
-        print(str(event))
         if event.type() == QEvent.Type.FileOpen:
             file_path = event.file()
             self._mainWindow.open_file(file_path)
