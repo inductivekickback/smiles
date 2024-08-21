@@ -56,23 +56,23 @@ plist = {
     'CFBundleShortVersionString': '1.1.0',
     'CFBundleDocumentTypes': [
         {
-            'CFBundleTypeName': 'RBW File',
+            'CFBundleTypeName': 'RLM File',
             'CFBundleTypeRole': 'Viewer',
-            'LSHandlerContentType': 'io.foolsday.rbw',
+            'LSHandlerContentType': 'io.foolsday.rlm',
             'LSHandlerRank': 'Owner',
-            'CFBundleTypeExtensions': ['rbw'],
+            'CFBundleTypeExtensions': ['rlm'],
         }
     ],
     'LSItemContentTypes': [
-        'io.foolsday.rbw'
+        'io.foolsday.rlm'
     ],
     'UTExportedTypeDeclarations': [
         {
             'UTTypeTagSpecification': {
-                'public.filename-extension': ['rbw']
+                'public.filename-extension': ['rlm']
             },
-            'UTTypeIdentifier': 'io.foolsday.rbw',
-            'UTTypeDescription': 'RBW File',
+            'UTTypeIdentifier': 'io.foolsday.rlm',
+            'UTTypeDescription': 'RLM File',
             'UTTypeConformsTo': ['public.data']
         }
     ]

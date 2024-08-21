@@ -32,7 +32,7 @@ __version__ = "1.1.0"
 __date__ = "Aug '24"
 
 APP_NAME = "Smiles"
-APP_EXT = "rbw"
+APP_EXT = "rlm"
 BASE_DIR = os.path.dirname(__file__)
 ARTEFACTS_DIR = "artefacts"
 DATA_FILE = "data.pickle"
