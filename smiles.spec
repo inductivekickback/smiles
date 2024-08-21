@@ -1,12 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
-
 a = Analysis(
     ['smiles.py', 'pdf_writer.py'],
     pathex=[],
     binaries=[],
     datas=[('artefacts/data.pickle', 'artefacts'),
                 ('artefacts/mileage.pdf', 'artefacts'),
-                ('artefacts/support.png', 'artefacts')],
+                ('artefacts/support.png', 'artefacts'),
+                ('installer_bg.png', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -46,9 +46,42 @@ coll = COLLECT(
     runtime_tmpdir=None,
     noarchive=False,
 )
+
+plist = {
+    'NSPrincipalClass': 'NSApplication',
+    'NSAppleScriptEnabled': False,
+    'CFBundleName': 'Smiles',
+    'CFBundleIdentifier': 'io.foolsday.smiles',
+    'CFBundleVersion': '1.1.0',
+    'CFBundleShortVersionString': '1.1.0',
+    'CFBundleDocumentTypes': [
+        {
+            'CFBundleTypeName': 'RBW File',
+            'CFBundleTypeRole': 'Viewer',
+            'LSHandlerContentType': 'io.foolsday.rbw',
+            'LSHandlerRank': 'Owner',
+            'CFBundleTypeExtensions': ['rbw'],
+        }
+    ],
+    'LSItemContentTypes': [
+        'io.foolsday.rbw'
+    ],
+    'UTExportedTypeDeclarations': [
+        {
+            'UTTypeTagSpecification': {
+                'public.filename-extension': ['rbw']
+            },
+            'UTTypeIdentifier': 'io.foolsday.rbw',
+            'UTTypeDescription': 'RBW File',
+            'UTTypeConformsTo': ['public.data']
+        }
+    ]
+}
+
 app = BUNDLE(
     coll,
     name='Smiles.app',
     icon='mentor.icns',
     bundle_identifier=None,
+    info_plist=plist,
 )

@@ -19,7 +19,7 @@ import platform
 import json
 import random
 from PyQt6.QtGui import QAction, QIcon, QColor, QPainter, QPen, QDoubleValidator, QPixmap, QFont
-from PyQt6.QtCore import Qt, QDate
+from PyQt6.QtCore import Qt, QDate, QEvent
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QDateEdit, QDialog,
                                 QMessageBox, QLineEdit, QCompleter, QPushButton, QVBoxLayout,
                                 QHBoxLayout, QWidget, QFormLayout, QLabel, QDialogButtonBox,
@@ -28,7 +28,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QDateEdit,
 from pdf_writer import fill_form
 
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __date__ = "Aug '24"
 
 APP_NAME = "Smiles"
@@ -65,7 +65,8 @@ class CustomLineEdit(QLineEdit):
 class AboutDialog(QDialog):
     """A simple 'About' dialog."""
 
-    QUOTES = (("Spread the weird!",),("We've got your back!",), ("Stay curious!",))
+    QUOTES = (("Spread the weird!",),("We've got your back!",),
+                    ("Stay curious!",), ("I shan't be doing that.",))
     QUOTE_AUTHOR = "-- The Mentor Team"
 
     TEXT_COLORS = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#8B00FF']
@@ -305,7 +306,7 @@ class MainWindow(QMainWindow):
     EMPTY_CELL_COLOR = 'gray'
     DATE_STR_FORMAT = "MM/dd/yy"
 
-    def __init__(self, data, settings):
+    def __init__(self, data, settings, initial_file=None):
         super().__init__()
         self.addresses, self.distances = data
         self.settings = settings
@@ -372,7 +373,7 @@ class MainWindow(QMainWindow):
 
         open_action = QAction("&Open", self)
         open_action.setShortcut("Ctrl+O")
-        open_action.triggered.connect(self._open_file)
+        open_action.triggered.connect(self.open_file)
 
         save_action = QAction("&Save", self)
         save_action.setShortcut("Ctrl+S")
@@ -422,6 +423,9 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(preferred_width,
                                 self.table_widget.rowHeight(0) * (self.ROW_COUNT + 3) + 3)
         self.setMaximumWidth(preferred_width)
+
+        if initial_file:
+            self.open_file(initial_file)
 
     def closeEvent(self, event):
         """Override the default close function to prompt the user in case of unsaved changes."""
@@ -581,23 +585,24 @@ class MainWindow(QMainWindow):
                 self.table_widget.cellWidget(i, j).clear()
         self.table_widget.setCurrentCell(0, 0)
 
-    def _open_file(self):
-        data = self._read_table()
-        if data != self.last_save:
-            reply = QMessageBox.question( self,
-                "Confirm Your Action",
-                "Do you want to save your data before continuing?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.Yes)
-            if reply == QMessageBox.StandardButton.Yes:
-                if not self._save_file(data):
-                    return
-        file_name, _ = QFileDialog.getOpenFileName(
-            self,
-            "Open File",
-            "",
-            f"{APP_NAME} Files (*.{APP_EXT});;All Files (*)"
-        )
+    def open_file(self, file_name=None):
+        if not file_name:
+            data = self._read_table()
+            if data != self.last_save:
+                reply = QMessageBox.question( self,
+                    "Confirm Your Action",
+                    "Do you want to save your data before continuing?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.Yes)
+                if reply == QMessageBox.StandardButton.Yes:
+                    if not self._save_file(data):
+                        return
+            file_name, _ = QFileDialog.getOpenFileName(
+                self,
+                "Open File",
+                "",
+                f"{APP_NAME} Files (*.{APP_EXT});;All Files (*)"
+            )
 
         if file_name:
             self._clear_table()
@@ -738,6 +743,21 @@ class MainWindow(QMainWindow):
                     self._highlite_cell(i, self.MILES_COL_INDEX)
 
 
+class SmileApp(QApplication):
+    def __init__(self, argv, data, settings, file_path):
+        super().__init__(argv)
+        self._mainWindow = MainWindow(data, settings, file_path)
+        self._mainWindow.show()
+
+    def event(self, event: QEvent):
+        print(str(event))
+        if event.type() == QEvent.Type.FileOpen:
+            file_path = event.file()
+            self._mainWindow.open_file(file_path)
+            return True
+        return super().event(event)
+
+
 def main():
     """Loads settings and the mileage data structure from the disk and shows the GUI."""
     data = None
@@ -745,9 +765,11 @@ def main():
     with open(os.path.join(BASE_DIR, ARTEFACTS_DIR, DATA_FILE), 'rb') as file:
         data = pickle.load(file)
 
-    app = QApplication(sys.argv)
-    main_window = MainWindow(data, settings)
-    main_window.show()
+    file_path = None
+    if len(sys.argv) > 1:
+        file_path = sys.argv[1]
+
+    app = SmileApp(sys.argv, data, settings, file_path)
     sys.exit(app.exec())
 
 
