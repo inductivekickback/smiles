@@ -6,7 +6,25 @@ This application gives 4j School District employees a convenient way to fill in 
  - Uses [pre-computed distances between school buildings](https://github.com/inductivekickback/mileage/)
  - A vanilla copy of the expense report PDF is bundled with the application and a new PDF is created every time it's filled in -- this precludes annoying errors that can happen when the same PDF is edited multiple times.
  - Auto-complete is enabled for school and purpose columns
- - Documents can be opened and saved to allow for incremental progress before creating the final PDF
+ - Documents can be opened and saved to allow for incremental progress before creating the final PDF.
 
-### Requirements
-The [current version](https://github.com/inductivekickback/smiles/releases/tag/v1.1.0) is tested on macOS Big Sur and newer (Intel and Apple silicon).
+### Releases
+The [current macOS version](https://github.com/inductivekickback/smiles/releases/tag/v1.1.0) is tested on Big Sur and newer (Intel and Apple silicon).
+
+### Building
+This project relies on the [pyqt6](https://pypi.org/project/PyQt6/), [pymupdf](https://pypi.org/project/PyMuPDF/), and [pyinstaller](https://pypi.org/project/pyinstaller/) projects. It was built with Python 3.8 but later Python versions are probably fine. The recommended process is to clone the repository and then:
+```
+$ python3 -m venv smiles/env
+$ cd smiles
+$ source env/bin/activate
+$ pip install --upgrade pip
+$ pip install -r requirements.txt
+```
+It can be run directly from the command line. Specify an optional document to open when starting:
+```
+$ python3 smiles.py PATH-TO-DOCUMENT
+```
+Use pyinstaller to build the macOS bundle:
+```
+$ python3 pyinstaller smiles.spec
+```
