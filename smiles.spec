@@ -1,4 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path('.').resolve()))
+import smiles
+
 a = Analysis(
     ['smiles.py', 'pdf_writer.py'],
     pathex=[],
@@ -52,8 +58,8 @@ plist = {
     'NSAppleScriptEnabled': False,
     'CFBundleName': 'Smiles',
     'CFBundleIdentifier': 'io.foolsday.smiles',
-    'CFBundleVersion': '1.1.0',
-    'CFBundleShortVersionString': '1.1.0',
+    'CFBundleVersion': f'{smiles.__version__}',
+    'CFBundleShortVersionString': f'{smiles.__version__}',
     'CFBundleDocumentTypes': [
         {
             'CFBundleTypeName': 'RLM File',
