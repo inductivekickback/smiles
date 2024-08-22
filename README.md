@@ -9,4 +9,4 @@ This application gives 4j School District employees a convenient way to fill in 
  - Documents can be opened and saved to allow for incremental progress before creating the final PDF
 
 ### Requirements
-Tested on macOS Big Sur and newer (Intel and Apple silicon).
+The [current version](https://github.com/inductivekickback/smiles/releases/tag/v1.1.0) is tested on macOS Big Sur and newer (Intel and Apple silicon).
