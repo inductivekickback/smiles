@@ -294,7 +294,7 @@ class MainWindow(QMainWindow):
     MILES_COL_INDEX = 5
 
     PURPOSE = ["Mentoring meeting", "Meeting", "Return to office", "Drop off materials",
-        "Classroom visit"]
+        "Classroom visit", "Office"]
 
     COLS = [("Date", 100), ("From Location", 120), ("To Location", 120), ("Purpose", 250),
         ("Parking", 60), ("Miles", 60)]
