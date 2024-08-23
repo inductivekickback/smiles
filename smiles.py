@@ -18,6 +18,7 @@ import os
 import platform
 import json
 import random
+from datetime import datetime
 from PyQt6.QtGui import QAction, QIcon, QColor, QPainter, QPen, QDoubleValidator, QPixmap, QFont
 from PyQt6.QtCore import Qt, QDate, QEvent
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QDateEdit, QDialog,
@@ -28,7 +29,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QDateEdit,
 from pdf_writer import fill_form
 
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 __date__ = "Aug '24"
 
 APP_NAME = "Smiles"
@@ -71,7 +72,7 @@ class AboutDialog(QDialog):
 
     TEXT_COLORS = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#8B00FF']
 
-    def __init__(self):
+    def __init__(self, data_date=None):
         super().__init__()
 
         self.setWindowTitle(f"About {APP_NAME}")
@@ -90,8 +91,7 @@ class AboutDialog(QDialog):
 
         label = QLabel("medley_r@4j.lane.edu", alignment=Qt.AlignmentFlag.AlignCenter)
         left_layout.addWidget(label)
-
-        left_layout.addSpacing(50)
+        left_layout.addStretch(1)
 
         current_font = label.font()
         default_font_size = current_font.pointSize()
@@ -103,9 +103,9 @@ class AboutDialog(QDialog):
 
         right_layout = QVBoxLayout()
 
-        label = QLabel(f"{APP_NAME} v{__version__} ({__date__})",
+        label = QLabel(f"{APP_NAME} v{__version__}",
                             alignment=Qt.AlignmentFlag.AlignCenter)
-        font.setPointSize(default_font_size + 10)
+        font.setPointSize(default_font_size + 8)
         label.setFont(font)
         right_layout.addWidget(label)
 
@@ -114,29 +114,45 @@ class AboutDialog(QDialog):
         label.setFont(font)
         right_layout.addWidget(label)
 
+        right_layout.addSpacing(20)
+
         hbox = QHBoxLayout()
 
         vbox = QVBoxLayout()
+        label = QLabel("App:", alignment=Qt.AlignmentFlag.AlignRight)
+        vbox.addWidget(label)
+        label = QLabel("")
+        vbox.addWidget(label)
         label = QLabel("Distance calculation:", alignment=Qt.AlignmentFlag.AlignRight)
         vbox.addWidget(label)
-        label = QLabel("Application:", alignment=Qt.AlignmentFlag.AlignRight)
+        label = QLabel("")
         vbox.addWidget(label)
         widget = QWidget()
         widget.setLayout(vbox)
         hbox.addWidget(widget)
 
         vbox = QVBoxLayout()
+
+        label = QLabel("<a href='https://github.com/inductivekickback/smiles'>" +
+            "github.com/inductivekickback/smiles</a>", alignment=Qt.AlignmentFlag.AlignLeft)
+        label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction |
+                                            Qt.TextInteractionFlag.LinksAccessibleByMouse)
+        label.setOpenExternalLinks(True)
+        vbox.addWidget(label)
+        label = QLabel(f'( Built: {__date__})', alignment=Qt.AlignmentFlag.AlignLeft)
+        vbox.addWidget(label)
         label = QLabel("<a href='https://github.com/inductivekickback/mileage'>" +
             "github.com/inductivekickback/mileage</a>", alignment=Qt.AlignmentFlag.AlignLeft)
         label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction |
                                             Qt.TextInteractionFlag.LinksAccessibleByMouse)
         label.setOpenExternalLinks(True)
         vbox.addWidget(label)
-        label = QLabel("<a href='https://github.com/inductivekickback/smiles'>" +
-            "github.com/inductivekickback/smiles</a>", alignment=Qt.AlignmentFlag.AlignLeft)
-        label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction |
-                                            Qt.TextInteractionFlag.LinksAccessibleByMouse)
-        label.setOpenExternalLinks(True)
+        date_text = "( Compiled: "
+        if data_date:
+            date_text += data_date.strftime("%b '%y") + " )"
+        else:
+            date_text += "--- )"
+        label = QLabel(f'{date_text}', alignment=Qt.AlignmentFlag.AlignLeft)
         vbox.addWidget(label)
         widget = QWidget()
         widget.setLayout(vbox)
@@ -308,7 +324,12 @@ class MainWindow(QMainWindow):
 
     def __init__(self, data, settings, initial_file=None):
         super().__init__()
-        self.addresses, self.distances = data
+        if len(data) == 2:
+            self.data_date = None
+            self.addresses, self.distances = data
+        elif len(data) == 3:
+            self.data_date, self.addresses, self.distances = data
+
         self.settings = settings
 
         self.setWindowTitle(f"{APP_NAME}")
@@ -325,7 +346,7 @@ class MainWindow(QMainWindow):
 
         self.table_widget.verticalHeader().setFixedWidth(self.ROW_COL_WIDTH)
 
-        school_names = data[0].keys()
+        school_names = self.addresses.keys()
         self.school_completer = QCompleter(school_names)
         self.school_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.school_completer.activated.connect(self._enter_pressed)
@@ -650,7 +671,7 @@ class MainWindow(QMainWindow):
                 self.settings = settings
 
     def _show_about(self):
-        about_dialog = AboutDialog()
+        about_dialog = AboutDialog(self.data_date)
         about_dialog.exec()
 
     def _get_row_and_col(self):
