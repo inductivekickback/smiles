@@ -28,7 +28,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QDateEdit,
 from pdf_writer import fill_form
 
 
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 __date__ = "Aug '24"
 
 APP_NAME = "Smiles"
@@ -113,12 +113,10 @@ class AboutDialog(QDialog):
         label.setFont(font)
         right_layout.addWidget(label)
 
-        right_layout.addSpacing(20)
-
         hbox = QHBoxLayout()
 
         vbox = QVBoxLayout()
-        label = QLabel("App:", alignment=Qt.AlignmentFlag.AlignRight)
+        label = QLabel("Application:", alignment=Qt.AlignmentFlag.AlignRight)
         vbox.addWidget(label)
         label = QLabel("")
         vbox.addWidget(label)
@@ -184,8 +182,6 @@ class AboutDialog(QDialog):
         quote_container.setLayout(quote_layout)
 
         right_layout.addWidget(quote_container)
-
-        right_layout.addSpacing(50)
 
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
         button_box.button(QDialogButtonBox.StandardButton.Ok).setDefault(True)
