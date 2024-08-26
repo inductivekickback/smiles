@@ -18,7 +18,6 @@ import os
 import platform
 import json
 import random
-from datetime import datetime
 from PyQt6.QtGui import QAction, QIcon, QColor, QPainter, QPen, QDoubleValidator, QPixmap, QFont
 from PyQt6.QtCore import Qt, QDate, QEvent
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QDateEdit, QDialog,
@@ -767,8 +766,8 @@ class MainWindow(QMainWindow):
 class SmileApp(QApplication):
     def __init__(self, argv, data, settings, file_path):
         super().__init__(argv)
-        self._mainWindow = MainWindow(data, settings, file_path)
-        self._mainWindow.show()
+        self._main_window = MainWindow(data, settings, file_path)
+        self._main_window.show()
 
     def event(self, event: QEvent):
         if event.type() == QEvent.Type.FileOpen:
