@@ -28,7 +28,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QDateEdit,
 from pdf_writer import fill_form
 
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 __date__ = "Aug '24"
 
 APP_NAME = "Smiles"
@@ -764,6 +764,8 @@ class MainWindow(QMainWindow):
 
 
 class SmileApp(QApplication):
+    """Subclass to allow event interception."""
+
     def __init__(self, argv, data, settings, file_path):
         super().__init__(argv)
         self._main_window = MainWindow(data, settings, file_path)
@@ -772,7 +774,7 @@ class SmileApp(QApplication):
     def event(self, event: QEvent):
         if event.type() == QEvent.Type.FileOpen:
             file_path = event.file()
-            self._mainWindow.open_file(file_path)
+            self._main_window.open_file(file_path)
             return True
         return super().event(event)
 
