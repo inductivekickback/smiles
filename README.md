@@ -1,4 +1,6 @@
-<img src="https://github.com/user-attachments/assets/372ae9d3-072f-4047-9494-400fa06bcbcc" alt="App Icon" width="150" align="center"><br><br>This application gives 4j School District employees a convenient way to fill in mileage expense reports without manually calculating the distance between school buildings. It was created by Rebecca Medley on the Mentor Team.<img src="https://github.com/user-attachments/assets/ed0cae14-58e3-4a0a-8708-d47d20a1d0ba" alt="Example GUI" width="200" align="right" style="margin-right: 15px; margin-bottom: 15px;"><br><br>
+<img src="https://github.com/user-attachments/assets/372ae9d3-072f-4047-9494-400fa06bcbcc" alt="App Icon" width="150" align="center"><br><br>This application gives 4j School District employees a convenient way to fill in mileage expense reports without manually calculating the distance between school buildings. It was created by Rebecca Medley on the Mentor Team.<img src="https://github.com/user-attachments/assets/ed0cae14-58e3-4a0a-8708-d47d20a1d0ba" alt="Example GUI" width="200" align="right" style="margin-right: 15px; margin-bottom: 15px;">
+
+---
 
 ### Features
  - Uses [pre-computed distances between school buildings](https://github.com/inductivekickback/mileage/)
@@ -7,7 +9,7 @@
  - Documents can be opened and saved to allow for incremental progress before creating the final PDF.
 
 ### Releases
-The [current macOS version](https://github.com/inductivekickback/smiles/releases/tag/v1.1.0) is tested on Big Sur and newer (Intel and Apple silicon).
+The [current macOS version](https://github.com/inductivekickback/smiles/releases/) is tested on Big Sur and newer (Intel and Apple silicon).
 
 ### Building
 This project relies on the [pyqt6](https://pypi.org/project/PyQt6/), [pymupdf](https://pypi.org/project/PyMuPDF/), and [pyinstaller](https://pypi.org/project/pyinstaller/) projects. It was built with Python 3.8 but later Python versions are probably fine. The recommended process is to clone the repository and then:
