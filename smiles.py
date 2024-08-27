@@ -28,7 +28,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QDateEdit,
 from pdf_writer import fill_form
 
 
-__version__ = "1.2.2"
+__version__ = "1.2.3"
 __date__ = "Aug '24"
 
 APP_NAME = "Smiles"
@@ -434,6 +434,10 @@ class MainWindow(QMainWindow):
 
         v = style.pixelMetric(QStyle.PixelMetric.PM_LayoutLeftMargin, option, self.table_widget)
         extra_h_space += 2 * v
+
+        # Add extra space so the vertical scrollbar doesn't cause a horizontal scrollbar on Big Sur.
+        scrollbar_width = style.pixelMetric(QStyle.PixelMetric.PM_ScrollBarExtent)
+        extra_h_space += scrollbar_width
 
         preferred_width = sum(x[1] for x in self.COLS) + extra_h_space
         self.setMinimumSize(preferred_width,
