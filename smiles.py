@@ -113,9 +113,15 @@ class AboutDialog(QDialog):
         label.setFont(font)
         right_layout.addWidget(label)
 
+        right_layout.addSpacing(30)
+
         hbox = QHBoxLayout()
+        hbox.setSpacing(0)
+        hbox.setContentsMargins(0, 0, 0, 0)
 
         vbox = QVBoxLayout()
+        vbox.setSpacing(2)
+        vbox.setContentsMargins(0, 0, 5, 0)
         label = QLabel("Application:", alignment=Qt.AlignmentFlag.AlignRight)
         vbox.addWidget(label)
         label = QLabel("")
@@ -129,7 +135,8 @@ class AboutDialog(QDialog):
         hbox.addWidget(widget)
 
         vbox = QVBoxLayout()
-
+        vbox.setSpacing(2)
+        vbox.setContentsMargins(0, 0, 0, 0)
         label = QLabel("<a href='https://github.com/inductivekickback/smiles'>" +
             "github.com/inductivekickback/smiles</a>", alignment=Qt.AlignmentFlag.AlignLeft)
         label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction |
@@ -768,13 +775,13 @@ class SmileApp(QApplication):
 
     def __init__(self, argv, data, settings, file_path):
         super().__init__(argv)
-        self._main_window = MainWindow(data, settings, file_path)
-        self._main_window.show()
+        self.main_window = MainWindow(data, settings, file_path)
+        self.main_window.show()
 
     def event(self, event: QEvent):
         if event.type() == QEvent.Type.FileOpen:
             file_path = event.file()
-            self._main_window.open_file(file_path)
+            self.main_window.open_file(file_path)
             return True
         return super().event(event)
 
