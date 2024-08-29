@@ -69,8 +69,6 @@ class AboutDialog(QDialog):
                     ("Stay curious!",), ("I shan't be doing that.",))
     QUOTE_AUTHOR = "-- The Mentor Team"
 
-    TEXT_COLORS = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#8B00FF']
-
     def __init__(self, data_date=None):
         super().__init__()
 
@@ -215,16 +213,6 @@ class AboutDialog(QDialog):
     @staticmethod
     def _set_text_color(text, color):
         return f'<span style="color: {color};font-weight: bold;">{text}</span>'
-
-    @staticmethod
-    def _to_rainbow_text(text):
-        result = []
-        i = 0
-        for c in text:
-            if c != ' ':
-                i = (i + 1) % len(AboutDialog.TEXT_COLORS)
-            result.append(AboutDialog._set_text_color(c, AboutDialog.TEXT_COLORS[i]))
-        return ''.join(result)
 
 
 class SettingsDialog(QDialog):
