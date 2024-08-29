@@ -203,7 +203,6 @@ class AboutDialog(QDialog):
         self.setLayout(layout)
 
         self.adjustSize()
-        # Disable resizing
         self.setFixedSize(self.size())
 
     @staticmethod
@@ -235,7 +234,6 @@ class SettingsDialog(QDialog):
         layout.addWidget(self.button_box)
         self.setLayout(layout)
         self.adjustSize()
-        # Disable resizing
         self.setFixedSize(self.size())
 
     def get_settings(self):
@@ -270,9 +268,7 @@ class SettingsDialog(QDialog):
 
     @staticmethod
     def save_settings(settings):
-        """
-        Saves the specified settings dict to file.
-        """
+        """Saves the specified settings dict to file."""
         pref_path = SettingsDialog._get_settings_path()
         pref_dir = os.path.dirname(pref_path)
         if not os.path.exists(pref_dir):
