@@ -9,7 +9,7 @@
  - Documents can be opened and saved to allow for incremental progress before creating the final PDF.
 
 ### Releases
-The [current macOS version](https://github.com/inductivekickback/smiles/releases/) is tested on Big Sur and newer (Intel and Apple silicon).
+The [current macOS version](https://github.com/inductivekickback/smiles/releases/) is tested on Big Sur and newer (Intel and Apple silicon). It's not a problem if your IT department prevents you from dragging things to the Applications folder -- drag this to your Desktop and run it from there instead.
 
 ### Building
 This application relies on the [pyqt6](https://pypi.org/project/PyQt6/), [pymupdf](https://pypi.org/project/PyMuPDF/), and [pyinstaller](https://pypi.org/project/pyinstaller/) projects. It was built with Python 3.8 but later Python versions are probably fine. The recommended process is to clone the repository and then:
