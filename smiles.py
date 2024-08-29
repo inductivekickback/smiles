@@ -122,11 +122,7 @@ class AboutDialog(QDialog):
         vbox.setContentsMargins(0, 0, 5, 0)
         label = QLabel("Application:", alignment=Qt.AlignmentFlag.AlignRight)
         vbox.addWidget(label)
-        label = QLabel("")
-        vbox.addWidget(label)
         label = QLabel("Distance calculation:", alignment=Qt.AlignmentFlag.AlignRight)
-        vbox.addWidget(label)
-        label = QLabel("")
         vbox.addWidget(label)
         widget = QWidget()
         widget.setLayout(vbox)
@@ -141,7 +137,7 @@ class AboutDialog(QDialog):
                                             Qt.TextInteractionFlag.LinksAccessibleByMouse)
         label.setOpenExternalLinks(True)
         vbox.addWidget(label)
-        label = QLabel(f'( Built: {__date__})', alignment=Qt.AlignmentFlag.AlignLeft)
+        label = QLabel(f'(Built: {__date__})', alignment=Qt.AlignmentFlag.AlignLeft)
         vbox.addWidget(label)
         label = QLabel("<a href='https://github.com/inductivekickback/mileage'>" +
             "github.com/inductivekickback/mileage</a>", alignment=Qt.AlignmentFlag.AlignLeft)
@@ -149,11 +145,11 @@ class AboutDialog(QDialog):
                                             Qt.TextInteractionFlag.LinksAccessibleByMouse)
         label.setOpenExternalLinks(True)
         vbox.addWidget(label)
-        date_text = "( Compiled: "
+        date_text = "(Compiled: "
         if data_date:
-            date_text += data_date.strftime("%b '%y") + " )"
+            date_text += data_date.strftime("%b '%y") + ")"
         else:
-            date_text += "--- )"
+            date_text += "---)"
         label = QLabel(f'{date_text}', alignment=Qt.AlignmentFlag.AlignLeft)
         vbox.addWidget(label)
         widget = QWidget()
