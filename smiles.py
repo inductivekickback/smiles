@@ -28,7 +28,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QDateEdit,
 from pdf_writer import fill_form
 
 
-__version__ = "1.2.5"
+__version__ = "1.3.0"
 __date__ = "Aug '24"
 
 APP_NAME = "Smiles"
@@ -283,6 +283,7 @@ class MainWindow(QMainWindow):
     ROW_COUNT = 11
     COL_COUNT = 6
     MAX_ROWS = 45
+    MAX_OPEN_DISPLAY_ROWS = 20 # The max for resizing when opening a save file
 
     DATE_COL_INDEX = 0
     FROM_COL_INDEX = 1
@@ -379,9 +380,9 @@ class MainWindow(QMainWindow):
         open_action.setShortcut("Ctrl+O")
         open_action.triggered.connect(self.open_file)
 
-        save_action = QAction("&Save", self)
-        save_action.setShortcut("Ctrl+S")
-        save_action.triggered.connect(self._save_file)
+        self.save_action = QAction("&Save", self)
+        self.save_action.setShortcut("Ctrl+S")
+        self.save_action.triggered.connect(self._save_file)
 
         save_as_action = QAction("&Save As", self)
         save_as_action.setShortcut("Ctrl+Shift+S")
@@ -407,7 +408,7 @@ class MainWindow(QMainWindow):
         file_menu.addAction(new_action)
         file_menu.addAction(open_action)
         file_menu.addSeparator()
-        file_menu.addAction(save_action)
+        file_menu.addAction(self.save_action)
         file_menu.addAction(save_as_action)
         file_menu.addAction(exit_action)
 
@@ -432,20 +433,23 @@ class MainWindow(QMainWindow):
         scrollbar_width = style.pixelMetric(QStyle.PixelMetric.PM_ScrollBarExtent)
         extra_h_space += scrollbar_width
 
-        preferred_width = sum(x[1] for x in self.COLS) + extra_h_space
-        self.setMinimumSize(preferred_width,
-                                self.table_widget.rowHeight(0) * (self.ROW_COUNT + 3) + 3)
-        self.setMaximumWidth(preferred_width)
+        self.preferred_width = sum(x[1] for x in self.COLS) + extra_h_space
+        self.setMinimumSize(self.preferred_width,
+                self.table_widget.rowHeight(0) * (self.ROW_COUNT + 3) + 3)
+        self.setMaximumWidth(self.preferred_width)
 
         if initial_file:
             self.open_file(initial_file)
 
-    def _get_window_title(self):
+    def _get_window_title(self, doc_needs_saving=False):
         if self.doc_path:
             doc = os.path.basename(self.doc_path)
+            if doc_needs_saving:
+                return f"{APP_NAME} ({doc}*)"
             return f"{APP_NAME} ({doc})"
-        else:
-            return f"{APP_NAME}"
+        if doc_needs_saving:
+            return f"{APP_NAME}(*)"
+        return f"{APP_NAME}"
 
     def closeEvent(self, event):
         """Override the default close function to prompt the user in case of unsaved changes."""
@@ -578,7 +582,22 @@ class MainWindow(QMainWindow):
         """Get the path to the user's Desktop unless a file has been recently opened or saved"""
         if self.doc_path:
             return os.path.dirname(self.doc_path)
-        return os.path.expanduser(f'~/Desktop')
+        return os.path.expanduser('~/Desktop')
+
+    def _update_save_item_and_title(self, read_table=False):
+        if not read_table:
+            self.save_action.setEnabled(False)
+            self.setWindowTitle(self._get_window_title(False))
+            return
+        data = self._read_table()
+        if data != self.last_save:
+            if not self.save_action.isEnabled():
+                self.save_action.setEnabled(True)
+                self.setWindowTitle(self._get_window_title(True))
+        else:
+            if self.save_action.isEnabled():
+                self.save_action.setEnabled(False)
+                self.setWindowTitle(self._get_window_title(False))
 
     def _save(self, file_path, data=None):
         if not data:
@@ -588,7 +607,7 @@ class MainWindow(QMainWindow):
                 json.dump(data, file, indent=4)
                 self.last_save = data
                 self.doc_path = file_path
-                self.setWindowTitle(self._get_window_title())
+                self._update_save_item_and_title()
                 return True
         except:
             QMessageBox.critical(self,
@@ -616,10 +635,11 @@ class MainWindow(QMainWindow):
     def _save_file(self, data=None):
         if self.doc_path:
             return self._save(self.doc_path, data)
-        else:
-            return self._save_as(data)
+        return self._save_as(data)
 
     def _clear_table(self):
+        self.table_widget.setCurrentCell(0, 0)
+        self.table_widget.setRowCount(self.ROW_COUNT)
         today = QDate.currentDate()
         for i in range(0, self.table_widget.rowCount()):
             self.table_widget.cellWidget(i, self.DATE_COL_INDEX).setDate(today)
@@ -657,13 +677,13 @@ class MainWindow(QMainWindow):
                         self._write_table(data)
                         self.last_save = data
                         self.doc_path = file_path
-                        self.setWindowTitle(self._get_window_title())
+                        self._update_save_item_and_title()
             except:
                 QMessageBox.critical(self,
                     "Error",
                     "The file could not be opened.",
                     QMessageBox.StandardButton.Ok)
-            self._update_table()
+            self._update_table(False)
 
     def _new_file(self):
         """Could have also been called 'Clear Table'."""
@@ -680,12 +700,13 @@ class MainWindow(QMainWindow):
         self._clear_table()
         self.last_save = self._read_table()
         self.doc_path = None
-        self.setWindowTitle(self._get_window_title())
+        self._update_save_item_and_title()
 
     def _add_row(self):
         count = self.table_widget.rowCount()
         if count < self.MAX_ROWS:
             self._add_table_row(count)
+            self._update_table()
         if count == (self.MAX_ROWS - 1):
             self.row_button.setEnabled(False)
 
@@ -745,7 +766,7 @@ class MainWindow(QMainWindow):
             if widget.isReadOnly():
                 self._select_next_cell()
 
-    def _enter_pressed(self, completed_text):
+    def _enter_pressed(self, _):
         self._select_next_cell()
 
     def _return_pressed(self):
@@ -753,10 +774,10 @@ class MainWindow(QMainWindow):
 
     def _row_is_empty(self, row):
         data = ''.join(self.table_widget.cellWidget(row, j).text()
-                                    for j in range(self.FROM_COL_INDEX, self.COL_COUNT))
+                                for j in range(self.FROM_COL_INDEX, self.COL_COUNT))
         return data == ''
 
-    def _update_table(self):
+    def _update_table(self, update_save_and_title=True):
         """Iterates through the entire table. For each line:
          -If the line is blank set the 'Date' text to gray, else default color
          -If the From and To locations are valid then set the 'Miles' value (with default color)
@@ -789,6 +810,8 @@ class MainWindow(QMainWindow):
                 else:
                     self.table_widget.cellWidget(i, self.MILES_COL_INDEX).clear()
                     self._highlite_cell(i, self.MILES_COL_INDEX)
+        if update_save_and_title:
+            self._update_save_item_and_title(True)
 
 
 class SmileApp(QApplication):
