@@ -28,7 +28,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QDateEdit,
 from pdf_writer import fill_form
 
 
-__version__ = "1.2.4"
+__version__ = "1.2.5"
 __date__ = "Aug '24"
 
 APP_NAME = "Smiles"
@@ -313,8 +313,9 @@ class MainWindow(QMainWindow):
             self.data_date, self.addresses, self.distances = data
 
         self.settings = settings
+        self.doc_path = None
 
-        self.setWindowTitle(f"{APP_NAME}")
+        self.setWindowTitle(self._get_window_title())
 
         self.central_widget = QWidget(self)
         self.setCentralWidget(self.central_widget)
@@ -382,6 +383,10 @@ class MainWindow(QMainWindow):
         save_action.setShortcut("Ctrl+S")
         save_action.triggered.connect(self._save_file)
 
+        save_as_action = QAction("&Save As", self)
+        save_as_action.setShortcut("Ctrl+Shift+S")
+        save_as_action.triggered.connect(self._save_as)
+
         exit_action = QAction("&Exit", self)
         exit_action.setShortcut("Ctrl+Q")
         exit_action.triggered.connect(self.close)
@@ -403,6 +408,7 @@ class MainWindow(QMainWindow):
         file_menu.addAction(open_action)
         file_menu.addSeparator()
         file_menu.addAction(save_action)
+        file_menu.addAction(save_as_action)
         file_menu.addAction(exit_action)
 
         pref_menu.addAction(settings_action)
@@ -433,6 +439,13 @@ class MainWindow(QMainWindow):
 
         if initial_file:
             self.open_file(initial_file)
+
+    def _get_window_title(self):
+        if self.doc_path:
+            doc = os.path.basename(self.doc_path)
+            return f"{APP_NAME} ({doc})"
+        else:
+            return f"{APP_NAME}"
 
     def closeEvent(self, event):
         """Override the default close function to prompt the user in case of unsaved changes."""
@@ -509,19 +522,21 @@ class MainWindow(QMainWindow):
             if reply == QMessageBox.StandardButton.No:
                 return
 
-        file_name, _ = QFileDialog.getSaveFileName(
+        file_dialog = QFileDialog(self)
+        file_dialog.setDirectory(self._get_default_file_dialog_path())
+        file_path, _ = file_dialog.getSaveFileName(
             self,
             "Save File",
             "",
             "PDF Files (*.pdf);;All Files (*)"
         )
-        if file_name:
-            _, ext = os.path.splitext(file_name)
+        if file_path:
+            _, ext = os.path.splitext(file_path)
             if not ext:
-                file_name = file_name + ".pdf"
+                file_path = file_path + ".pdf"
 
             try:
-                fill_form(os.path.join(BASE_DIR, ARTEFACTS_DIR, FORM_FILE), file_name, data)
+                fill_form(os.path.join(BASE_DIR, ARTEFACTS_DIR, FORM_FILE), file_path, data)
             except:
                 QMessageBox.critical(self,
                     "Error",
@@ -559,30 +574,50 @@ class MainWindow(QMainWindow):
             else:
                 date_widget.setDate(today)
 
-    def _save_file(self, data=None):
-        file_name, _ = QFileDialog.getSaveFileName(
+    def _get_default_file_dialog_path(self):
+        """Get the path to the user's Desktop unless a file has been recently opened or saved"""
+        if self.doc_path:
+            return os.path.dirname(self.doc_path)
+        return os.path.expanduser(f'~/Desktop')
+
+    def _save(self, file_path, data=None):
+        if not data:
+            data = self._read_table()
+        try:
+            with open(file_path, 'w', encoding='utf-8') as file:
+                json.dump(data, file, indent=4)
+                self.last_save = data
+                self.doc_path = file_path
+                self.setWindowTitle(self._get_window_title())
+                return True
+        except:
+            QMessageBox.critical(self,
+                "Error",
+                "The file could not be saved.",
+                QMessageBox.StandardButton.Ok)
+        return False
+
+    def _save_as(self, data=None):
+        file_dialog = QFileDialog(self)
+        file_dialog.setDirectory(self._get_default_file_dialog_path())
+        file_path, _ = file_dialog.getSaveFileName(
             self,
             "Save File",
             "",
             f"{APP_NAME} Files (*.{APP_EXT});;All Files (*)"
         )
-        if file_name:
-            _, ext = os.path.splitext(file_name)
+        if file_path:
+            _, ext = os.path.splitext(file_path)
             if not ext:
-                file_name = file_name + f".{APP_EXT}"
-            if not data:
-                data = self._read_table()
-            try:
-                with open(file_name, 'w', encoding='utf-8') as file:
-                    json.dump(data, file, indent=4)
-                    self.last_save = data
-                    return True
-            except:
-                QMessageBox.critical(self,
-                    "Error",
-                    "The file could not be saved.",
-                    QMessageBox.StandardButton.Ok)
+                file_path = file_path + f".{APP_EXT}"
+            return self._save(file_path, data)
         return False
+
+    def _save_file(self, data=None):
+        if self.doc_path:
+            return self._save(self.doc_path, data)
+        else:
+            return self._save_as(data)
 
     def _clear_table(self):
         today = QDate.currentDate()
@@ -592,8 +627,8 @@ class MainWindow(QMainWindow):
                 self.table_widget.cellWidget(i, j).clear()
         self.table_widget.setCurrentCell(0, 0)
 
-    def open_file(self, file_name=None):
-        if not file_name:
+    def open_file(self, file_path=None):
+        if not file_path:
             data = self._read_table()
             if data != self.last_save:
                 reply = QMessageBox.question( self,
@@ -604,21 +639,25 @@ class MainWindow(QMainWindow):
                 if reply == QMessageBox.StandardButton.Yes:
                     if not self._save_file(data):
                         return
-            file_name, _ = QFileDialog.getOpenFileName(
+            file_dialog = QFileDialog(self)
+            file_dialog.setDirectory(self._get_default_file_dialog_path())
+            file_path, _ = file_dialog.getOpenFileName(
                 self,
                 "Open File",
                 "",
                 f"{APP_NAME} Files (*.{APP_EXT});;All Files (*)"
             )
 
-        if file_name:
-            self._clear_table()
+        if file_path:
             try:
-                if os.path.exists(file_name):
-                    with open(file_name, 'r', encoding='utf-8') as f:
+                if os.path.exists(file_path):
+                    with open(file_path, 'r', encoding='utf-8') as f:
                         data = json.load(f)
-                        self.last_save = data
+                        self._clear_table()
                         self._write_table(data)
+                        self.last_save = data
+                        self.doc_path = file_path
+                        self.setWindowTitle(self._get_window_title())
             except:
                 QMessageBox.critical(self,
                     "Error",
@@ -640,6 +679,8 @@ class MainWindow(QMainWindow):
                     return
         self._clear_table()
         self.last_save = self._read_table()
+        self.doc_path = None
+        self.setWindowTitle(self._get_window_title())
 
     def _add_row(self):
         count = self.table_widget.rowCount()
