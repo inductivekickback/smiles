@@ -18,7 +18,8 @@ import os
 import platform
 import json
 import random
-from PyQt6.QtGui import QAction, QIcon, QColor, QPainter, QPen, QDoubleValidator, QPixmap, QFont
+from PyQt6.QtGui import (QAction, QIcon, QColor, QPainter, QPen, QDoubleValidator, QPixmap,
+                                QFont, QDragEnterEvent, QDropEvent)
 from PyQt6.QtCore import Qt, QDate, QEvent
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QDateEdit, QDialog,
                                 QMessageBox, QLineEdit, QCompleter, QPushButton, QVBoxLayout,
@@ -317,6 +318,7 @@ class MainWindow(QMainWindow):
         self.doc_path = None
 
         self.setWindowTitle(self._get_window_title())
+        self.setAcceptDrops(True)
 
         self.central_widget = QWidget(self)
         self.setCentralWidget(self.central_widget)
@@ -440,6 +442,18 @@ class MainWindow(QMainWindow):
 
         if initial_file:
             self.open_file(initial_file)
+
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event: QDropEvent):
+        urls = event.mimeData().urls()
+        if urls:
+            file_path = urls[0].toLocalFile()
+            self.open_file(file_path)
 
     def _get_window_title(self, doc_needs_saving=False):
         if self.doc_path:
