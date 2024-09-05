@@ -542,12 +542,10 @@ class MainWindow(QMainWindow):
 
         file_dialog = QFileDialog(self)
         file_dialog.setDirectory(self._get_default_file_dialog_path())
-        file_path, _ = file_dialog.getSaveFileName(
-            self,
+        file_path, _ = file_dialog.getSaveFileName(self,
             "Save File",
             "",
-            "PDF Files (*.pdf);;All Files (*)"
-        )
+            "PDF Files (*.pdf);;All Files (*)")
         if file_path:
             _, ext = os.path.splitext(file_path)
             if not ext:
@@ -559,6 +557,10 @@ class MainWindow(QMainWindow):
                 QMessageBox.critical(self,
                     "Error",
                     "The PDF could not be saved.",
+                    QMessageBox.StandardButton.Ok)
+            else:
+                QMessageBox.information(self,
+                    "PDF Created", "Remember to review the PDF and sign it before submitting!",
                     QMessageBox.StandardButton.Ok)
 
     def _read_table(self, strip_empty_rows=False):
@@ -633,12 +635,8 @@ class MainWindow(QMainWindow):
     def _save_as(self, data=None):
         file_dialog = QFileDialog(self)
         file_dialog.setDirectory(self._get_default_file_dialog_path())
-        file_path, _ = file_dialog.getSaveFileName(
-            self,
-            "Save File",
-            "",
-            f"{APP_NAME} Files (*.{APP_EXT});;All Files (*)"
-        )
+        file_path, _ = file_dialog.getSaveFileName(self,
+            "Save File", "", f"{APP_NAME} Files (*.{APP_EXT});;All Files (*)")
         if file_path:
             _, ext = os.path.splitext(file_path)
             if not ext:
@@ -675,12 +673,10 @@ class MainWindow(QMainWindow):
                         return
             file_dialog = QFileDialog(self)
             file_dialog.setDirectory(self._get_default_file_dialog_path())
-            file_path, _ = file_dialog.getOpenFileName(
-                self,
+            file_path, _ = file_dialog.getOpenFileName(self,
                 "Open File",
                 "",
-                f"{APP_NAME} Files (*.{APP_EXT});;All Files (*)"
-            )
+                f"{APP_NAME} Files (*.{APP_EXT});;All Files (*)")
 
         if file_path:
             try:
