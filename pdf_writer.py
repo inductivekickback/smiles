@@ -15,7 +15,7 @@ with the use or inability to use the software.
 import fitz
 
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __date__ = "Aug '24"
 
 NUM_COLS_PER_LINE = 6
@@ -71,11 +71,20 @@ def fill_form(path, save_path, data):
     table_row = 0
     row = 0
     while table_row < page_len:
-        for j in range(0, NUM_COLS_PER_LINE):
+        for j in range(0, PARKING_COL_INDEX):
             field_name = FIELD_NAME_FMTS[j].format(1, row)
             values[field_name] = table[table_row][j]
-        page_parking_totals[0] += _parse_float(table[table_row][PARKING_COL_INDEX])
-        page_miles_totals[0] += _parse_float(table[table_row][MILES_COL_INDEX])
+
+        field_name = FIELD_NAME_FMTS[PARKING_COL_INDEX].format(1, row)
+        value = _parse_float(table[table_row][PARKING_COL_INDEX])
+        values[field_name] = value
+        page_parking_totals[0] += value
+
+        field_name = FIELD_NAME_FMTS[MILES_COL_INDEX].format(1, row)
+        value = _parse_float(table[table_row][MILES_COL_INDEX])
+        values[field_name] = value
+        page_miles_totals[0] += value
+
         row += 1
         table_row += 1
 
@@ -86,11 +95,20 @@ def fill_form(path, save_path, data):
         for i in range(0, NUM_ROWS_PAGE_X):
             if table_row == len(table):
                 break
-            for j in range(0, NUM_COLS_PER_LINE):
+            for j in range(0, PARKING_COL_INDEX):
                 field_name = FIELD_NAME_FMTS[j].format(page_num+1, row)
                 values[field_name] = table[table_row][j]
-            page_parking_totals[page_num] += _parse_float(table[table_row][PARKING_COL_INDEX])
-            page_miles_totals[page_num] += _parse_float(table[table_row][MILES_COL_INDEX])
+
+            field_name = FIELD_NAME_FMTS[PARKING_COL_INDEX].format(page_num+1, row)
+            value = _parse_float(table[table_row][PARKING_COL_INDEX])
+            values[field_name] = value
+            page_parking_totals[page_num] += value
+    
+            field_name = FIELD_NAME_FMTS[MILES_COL_INDEX].format(page_num+1, row)
+            value = _parse_float(table[table_row][MILES_COL_INDEX])
+            values[field_name] = value
+            page_miles_totals[page_num] += value
+
             table_row += 1
             row += 1
 

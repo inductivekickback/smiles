@@ -29,7 +29,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QDateEdit,
 from pdf_writer import fill_form
 
 
-__version__ = "1.3.0"
+__version__ = "1.3.1"
 __date__ = "Aug '24"
 
 APP_NAME = "Smiles"
@@ -301,9 +301,7 @@ class MainWindow(QMainWindow):
 
     ROW_COL_WIDTH = 25
 
-    ERROR_MILES_TXT = "---"
-    ERROR_CELL_COLOR = 'red'
-    EMPTY_CELL_COLOR = 'gray'
+    EMPTY_ROW_COLOR = 'gray'
     DATE_STR_FORMAT = "MM/dd/yy"
 
     def __init__(self, data, settings, initial_file=None):
@@ -341,9 +339,13 @@ class MainWindow(QMainWindow):
         self.purpose_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.purpose_completer.activated.connect(self._enter_pressed)
 
-        self.double_validator = QDoubleValidator()
-        self.double_validator.setBottom(0.0)
-        self.double_validator.setDecimals(2)
+        self.money_validator = QDoubleValidator()
+        self.money_validator.setBottom(0.0)
+        self.money_validator.setDecimals(2)
+
+        self.mileage_validator = QDoubleValidator()
+        self.mileage_validator.setBottom(0.0)
+        self.mileage_validator.setDecimals(1)
 
         for row in range(self.ROW_COUNT):
             self._add_table_row(row)
@@ -487,7 +489,7 @@ class MainWindow(QMainWindow):
                 date_edit = QDateEdit()
                 date_edit.setCalendarPopup(True)
                 date_edit.setDate(QDate.currentDate())
-                date_edit.setStyleSheet(f"color: {self.EMPTY_CELL_COLOR}")
+                date_edit.setStyleSheet(f"color: {self.EMPTY_ROW_COLOR}")
                 self.table_widget.setCellWidget(row, col, date_edit)
                 # NOTE: Don't connect this until after setDate is called.
                 date_edit.dateChanged.connect(self._on_date_changed)
@@ -497,13 +499,12 @@ class MainWindow(QMainWindow):
                     line_edit.setCompleter(self.school_completer)
                 elif col == self.PURPOSE_COL_INDEX:
                     line_edit.setCompleter(self.purpose_completer)
-                elif col == self.PARKING_COL_INDEX:
-                    line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                    line_edit.setValidator(self.double_validator)
-                    line_edit.returnPressed.connect(self._return_pressed)
                 else:
                     line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                    line_edit.setReadOnly(True)
+                    if col == self.PARKING_COL_INDEX:
+                        line_edit.setValidator(self.money_validator)
+                    else:
+                        line_edit.setValidator(self.mileage_validator)
                     line_edit.returnPressed.connect(self._return_pressed)
 
                 self.table_widget.setCellWidget(row, col, line_edit)
@@ -531,14 +532,13 @@ class MainWindow(QMainWindow):
                 QMessageBox.StandardButton.Ok)
             return
         miles_col = [t[self.MILES_COL_INDEX] for t in table]
-        if self.ERROR_MILES_TXT in miles_col or '' in miles_col:
-            reply = QMessageBox.warning(self,
-                "Confirm Your Action",
-                "At least one line doesn't have a value for the 'Miles' column. Continue?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No)
-            if reply == QMessageBox.StandardButton.No:
-                return
+        if '' in miles_col:
+            QMessageBox.warning(self,
+                "Warning",
+                "At least one line doesn't have a value for the 'Miles' column.",
+                QMessageBox.StandardButton.Ok,
+                QMessageBox.StandardButton.Ok)
+            return
 
         file_dialog = QFileDialog(self)
         file_dialog.setDirectory(self._get_default_file_dialog_path())
@@ -759,19 +759,24 @@ class MainWindow(QMainWindow):
                     break
             self.table_widget.setCurrentCell(row, col)
 
-    def _highlite_cell(self, row, col, color=None):
+    def _set_custom_font(self, row, col, color=None, bold=False):
         item = self.table_widget.cellWidget(row, col)
+        sheet = ""
         if color:
-            item.setStyleSheet(f"color: {color}")
-        else:
-            item.setStyleSheet("")
+            sheet += f"color: {color}"
+        if bold:
+            sheet += "font-weight: bold;"
+        item.setStyleSheet(sheet)
+
+    def _clear_custom_font(self, row, col):
+        self._set_custom_font(row, col)
 
     def _cell_selection_changed(self):
         coords = self._get_row_and_col()
         if coords:
             row, col = coords
             self._update_table()
-            self._highlite_cell(row, self.DATE_COL_INDEX)
+            self._clear_custom_font(row, self.DATE_COL_INDEX)
             widget = self.table_widget.cellWidget(row, col)
             if widget.isReadOnly():
                 self._select_next_cell()
@@ -795,31 +800,31 @@ class MainWindow(QMainWindow):
         """
         for i in range(0, self.table_widget.rowCount()):
             if self._row_is_empty(i):
-                self._highlite_cell(i, self.DATE_COL_INDEX, self.EMPTY_CELL_COLOR)
+                self._set_custom_font(i, self.DATE_COL_INDEX, self.EMPTY_ROW_COLOR)
             else:
-                self._highlite_cell(i, self.DATE_COL_INDEX)
+                self._clear_custom_font(i, self.DATE_COL_INDEX)
                 origin = self.table_widget.cellWidget(i, self.FROM_COL_INDEX).text()
                 dest = self.table_widget.cellWidget(i, self.TO_COL_INDEX).text()
+                miles = self.table_widget.cellWidget(i, self.MILES_COL_INDEX)
                 if origin and dest:
                     if origin.upper() == dest.upper():
-                        self.table_widget.cellWidget(i, self.MILES_COL_INDEX).setText('0')
-                        self._highlite_cell(i, self.MILES_COL_INDEX)
+                        miles.setText('0')
+                        self._set_custom_font(i, self.MILES_COL_INDEX, None, True)
+                        miles.setReadOnly(True)
                     else:
                         try:
                             dist = self.distances[origin][dest]
-                            self.table_widget.cellWidget(i, self.MILES_COL_INDEX).setText(str(dist))
-                            self._highlite_cell(i, self.MILES_COL_INDEX)
+                            miles.setText(str(dist))
+                            self._set_custom_font(i, self.MILES_COL_INDEX, None, True)
+                            miles.setReadOnly(True)
                         except KeyError:
-                            item = self.table_widget.cellWidget(i, self.MILES_COL_INDEX)
-                            item.setText(self.ERROR_MILES_TXT)
-                            self._highlite_cell(i, self.MILES_COL_INDEX, self.ERROR_CELL_COLOR)
-                elif origin or dest:
-                    item = self.table_widget.cellWidget(i, self.MILES_COL_INDEX)
-                    item.setText(self.ERROR_MILES_TXT)
-                    self._highlite_cell(i, self.MILES_COL_INDEX, self.ERROR_CELL_COLOR)
+                            if miles.isReadOnly():
+                                miles.clear()
+                            self._clear_custom_font(i, self.MILES_COL_INDEX)
+                            miles.setReadOnly(False)
                 else:
-                    self.table_widget.cellWidget(i, self.MILES_COL_INDEX).clear()
-                    self._highlite_cell(i, self.MILES_COL_INDEX)
+                    miles.setReadOnly(False)
+                    self._clear_custom_font(i, self.MILES_COL_INDEX)
         if update_save_and_title:
             self._update_save_item_and_title(True)
 
