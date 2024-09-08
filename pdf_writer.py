@@ -16,7 +16,7 @@ import fitz
 
 
 __version__ = "1.0.1"
-__date__ = "Aug '24"
+__date__ = "Sept '24"
 
 NUM_COLS_PER_LINE = 6
 NUM_ROWS_PAGE_1 = 11
