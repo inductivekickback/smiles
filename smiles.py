@@ -527,7 +527,7 @@ class MainWindow(QMainWindow):
         table = self._read_table(True)
         data = {"USER_INFO": self.settings, "TABLE": table}
         if not table:
-            reply = QMessageBox.warning(self,
+            QMessageBox.warning(self,
                 "Error",
                 "The table doesn't contain any useful data.",
                 QMessageBox.StandardButton.Ok)
