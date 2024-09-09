@@ -12,10 +12,12 @@ remains with you. In no event shall the software provider be liable for any dire
 incidental, special, consequential, or punitive damages whatsoever arising out of or in connection
 with the use or inability to use the software.
 """
+from datetime import datetime
+
 import fitz
 
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 __date__ = "Sept '24"
 
 NUM_COLS_PER_LINE = 6
@@ -36,6 +38,9 @@ FIELD_NAME_FMTS = ["txtP{0}Date.{1}", "txtP{0}FromLoc.{1}",
                         "txtP{0}ToLoc.{1}", "txtP{0}Purpose.{1}",
                         "txtP{0}AmtParking.{1}", "txtP{0}Miles.{1}"]
 
+INPUT_STR_FORMAT = "%m/%d/%Y" # Equivalent to QDate's toString("MM/dd/yyyy")
+OUTPUT_STR_FORMAT = "%m/%d/%y"
+
 
 def _update_widget(widget, value):
     try:
@@ -43,7 +48,9 @@ def _update_widget(widget, value):
             value = f"{value:0.2f}"
         elif 'Miles' in widget.field_name:
             value = f"{value:0.1f}"
-    except ValueError:
+        elif 'Date' in widget.field_name:
+            value = datetime.strptime(value, INPUT_STR_FORMAT).strftime(OUTPUT_STR_FORMAT)
+    except ValueError as ex:
         pass
     widget.field_value = value
     widget.update()
