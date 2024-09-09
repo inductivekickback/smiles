@@ -711,7 +711,7 @@ class MainWindow(QMainWindow):
                         data = json.load(f)
                         self._clear_table()
                         self._write_table(data)
-                        self.last_save = data
+                        self.last_save = self._read_table()
                         self.doc_path = file_path
                         self._update_save_item_and_title()
             except:
