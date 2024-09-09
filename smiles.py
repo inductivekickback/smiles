@@ -29,7 +29,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QDateEdit,
 from pdf_writer import fill_form
 
 
-__version__ = "1.3.1"
+__version__ = "1.4.0"
 __date__ = "Sept '24"
 
 APP_NAME = "Smiles"
@@ -565,22 +565,25 @@ class MainWindow(QMainWindow):
                     "PDF Created", "Remember to review the PDF and sign it before submitting!",
                     QMessageBox.StandardButton.Ok)
 
-    def _read_table(self, strip_empty_rows=True):
-        # TODO: Read the table starting from the bottom and always strip empty rows.
-        #       When a non-empty line is found then stop stripping them unless strip_empty_rows.
+    def _read_table(self, strip_empty_rows=False):
+        # Read the table starting from the bottom and skip empty rows until content is encountered.
+        # Then only skip empty rows if strip_empty_rows.
         data = []
-        for i in range(0, self.table_widget.rowCount()):
+        found_non_empty_row = False
+        for i in range(self.table_widget.rowCount() - 1, -1, -1):
             row = []
             for j in range(1, self.COL_COUNT):
                 row.append(self.table_widget.cellWidget(i, j).text())
             # Don't preserve dates on lines that are otherwise empty.
             if row != ['', '', '', '', '']:
+                found_non_empty_row = True
                 d = self.table_widget.cellWidget(i, self.DATE_COL_INDEX).date()
                 row.insert(0, d.toString(self.DATE_STR_FORMAT))
                 data.append(row)
-            elif not strip_empty_rows:
+            elif not strip_empty_rows and found_non_empty_row:
                 row.insert(0, None)
                 data.append(row)
+        data.reverse()
         return data
 
     def _write_table(self, data):
