@@ -29,7 +29,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QDateEdit,
 from pdf_writer import fill_form
 
 
-__version__ = "1.4.0"
+__version__ = "1.4.1"
 __date__ = "Sept '24"
 
 APP_NAME = "Smiles"
