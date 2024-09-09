@@ -77,22 +77,21 @@ class AboutDialog(QDialog):
 
         left_layout = QVBoxLayout()
 
-        image_label = QLabel(self)
-        image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        image_label.setFixedSize(166, 256)
+        label = QLabel(self)
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label.setFixedSize(166, 256)
         pixmap = QPixmap(os.path.join(BASE_DIR, ARTEFACTS_DIR, ABOUT_IMG_PATH))
-        scaled_pixmap = pixmap.scaled(image_label.size(),
+        scaled_pixmap = pixmap.scaled(label.size(),
             Qt.AspectRatioMode.KeepAspectRatio,
             Qt.TransformationMode.SmoothTransformation)
-        image_label.setPixmap(scaled_pixmap)
-        left_layout.addWidget(image_label)
+        label.setPixmap(scaled_pixmap)
+        left_layout.addWidget(label)
 
         label = QLabel("medley_r@4j.lane.edu", alignment=Qt.AlignmentFlag.AlignCenter)
         left_layout.addWidget(label)
         left_layout.addStretch(1)
 
-        current_font = label.font()
-        default_font_size = current_font.pointSize()
+        default_font_size = label.font().pointSize()
 
         font = QFont()
         font.setPointSize(default_font_size - 1)
@@ -206,10 +205,6 @@ class AboutDialog(QDialog):
         self.adjustSize()
         self.setFixedSize(self.size())
 
-    @staticmethod
-    def _set_text_color(text, color):
-        return f'<span style="color: {color};font-weight: bold;">{text}</span>'
-
 
 class SettingsDialog(QDialog):
     """Maintains a simple 'settings' data structure across multiple platforms."""
@@ -227,12 +222,12 @@ class SettingsDialog(QDialog):
             edit.setFixedWidth(200)
             self.edits[setting] = edit
             layout.addRow(QLabel(f"{setting}:"), edit)
-        self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok |
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok |
             QDialogButtonBox.StandardButton.Cancel)
-        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setDefault(True)
-        self.button_box.accepted.connect(self.accept)
-        self.button_box.rejected.connect(self.reject)
-        layout.addWidget(self.button_box)
+        button_box.button(QDialogButtonBox.StandardButton.Ok).setDefault(True)
+        button_box.accepted.connect(self.accept)
+        button_box.rejected.connect(self.reject)
+        layout.addWidget(button_box)
         self.setLayout(layout)
         self.adjustSize()
         self.setFixedSize(self.size())
@@ -284,7 +279,6 @@ class MainWindow(QMainWindow):
     ROW_COUNT = 11
     COL_COUNT = 6
     MAX_ROWS = 45
-    MAX_OPEN_DISPLAY_ROWS = 20 # The max for resizing when opening a save file
 
     DATE_COL_INDEX = 0
     FROM_COL_INDEX = 1
@@ -318,10 +312,10 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(self._get_window_title())
         self.setAcceptDrops(True)
 
-        self.central_widget = QWidget(self)
-        self.setCentralWidget(self.central_widget)
+        central_widget = QWidget(self)
+        self.setCentralWidget(central_widget)
 
-        self.table_widget = QTableWidget(self.central_widget)
+        self.table_widget = QTableWidget(central_widget)
         self.table_widget.setColumnCount(self.COL_COUNT)
         self.table_widget.setHorizontalHeaderLabels([c[0] for c in self.COLS])
 
@@ -330,6 +324,61 @@ class MainWindow(QMainWindow):
 
         self.table_widget.verticalHeader().setFixedWidth(self.ROW_COL_WIDTH)
 
+        self._create_completers_and_validators()
+
+        for row in range(self.ROW_COUNT):
+            self._add_table_row(row)
+
+        self.table_widget.itemSelectionChanged.connect(self._cell_selection_changed)
+
+        self.row_button = QPushButton("Add row")
+        self.row_button.setShortcut("Ctrl+A")
+        self.row_button.clicked.connect(self._grow_table)
+
+        self.pdf_button = QPushButton("Create PDF")
+        self.pdf_button.setShortcut("Ctrl+P")
+        self.pdf_button.clicked.connect(self._create_pdf)
+
+        layout = QVBoxLayout(central_widget)
+        layout.addWidget(self.table_widget)
+        bottom_layout = QHBoxLayout()
+        bottom_layout.addWidget(self.row_button)
+        bottom_layout.addStretch(1)  # Add stretchable space to push button to the right
+        bottom_layout.addWidget(self.pdf_button)
+        layout.addLayout(bottom_layout)
+        central_widget.setLayout(layout)
+
+        icon = QIcon(os.path.join(BASE_DIR, ARTEFACTS_DIR, ICON_FILE))
+        self.setWindowIcon(icon)
+        self._add_menubar()
+        self._set_min_and_max_window_size()
+
+        self.last_save = self._read_table()
+        if initial_file:
+            self.open_file(initial_file)
+
+    def _set_min_and_max_window_size(self):
+        style = self.table_widget.style()
+        option = QStyleOption()
+        option.initFrom(self.table_widget)
+
+        extra_h_space = self.ROW_COL_WIDTH
+        v = style.pixelMetric(QStyle.PixelMetric.PM_DefaultFrameWidth, option, self.table_widget)
+        extra_h_space += 2 * v
+
+        v = style.pixelMetric(QStyle.PixelMetric.PM_LayoutLeftMargin, option, self.table_widget)
+        extra_h_space += 2 * v
+
+        # Add extra space so the vertical scrollbar doesn't cause a horizontal scrollbar on Big Sur.
+        scrollbar_width = style.pixelMetric(QStyle.PixelMetric.PM_ScrollBarExtent)
+        extra_h_space += scrollbar_width
+
+        preferred_width = sum(x[1] for x in self.COLS) + extra_h_space
+        self.setMinimumSize(preferred_width,
+                self.table_widget.rowHeight(0) * (self.ROW_COUNT + 3) + 3)
+        self.setMaximumWidth(preferred_width)
+
+    def _create_completers_and_validators(self):
         school_names = self.addresses.keys()
         self.school_completer = QCompleter(school_names)
         self.school_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
@@ -347,35 +396,7 @@ class MainWindow(QMainWindow):
         self.mileage_validator.setBottom(0.0)
         self.mileage_validator.setDecimals(1)
 
-        for row in range(self.ROW_COUNT):
-            self._add_table_row(row)
-
-        self.table_widget.itemSelectionChanged.connect(self._cell_selection_changed)
-
-        self.row_button = QPushButton("Add row")
-        self.row_button.setShortcut("Ctrl+A")
-        self.row_button.clicked.connect(self._add_row)
-
-        self.pdf_button = QPushButton("Create PDF")
-        self.pdf_button.setShortcut("Ctrl+P")
-        self.pdf_button.clicked.connect(self._create_pdf)
-
-        layout = QVBoxLayout(self.central_widget)
-
-        layout.addWidget(self.table_widget)
-
-        bottom_layout = QHBoxLayout()
-        bottom_layout.addWidget(self.row_button)
-        bottom_layout.addStretch(1)  # Add stretchable space to push button to the right
-        bottom_layout.addWidget(self.pdf_button)
-
-        layout.addLayout(bottom_layout)
-
-        self.central_widget.setLayout(layout)
-
-        icon = QIcon(os.path.join(BASE_DIR, ARTEFACTS_DIR, ICON_FILE))
-        self.setWindowIcon(icon)
-
+    def _add_menubar(self):
         new_action = QAction("&New File", self)
         new_action.setShortcut("Ctrl+N")
         new_action.triggered.connect(self._new_file)
@@ -404,7 +425,6 @@ class MainWindow(QMainWindow):
         about_action.triggered.connect(self._show_about)
 
         menubar = self.menuBar()
-
         file_menu = menubar.addMenu("&File")
         pref_menu = menubar.addMenu("Settings")
         help_menu = menubar.addMenu("Help")
@@ -416,43 +436,51 @@ class MainWindow(QMainWindow):
         file_menu.addAction(save_as_action)
         file_menu.addSeparator()
         file_menu.addAction(exit_action)
-
         pref_menu.addAction(settings_action)
-
         help_menu.addAction(about_action)
 
-        self.last_save = self._read_table()
+    def _add_table_row(self, row):
+        self.table_widget.insertRow(row)
+        for col in range(self.COL_COUNT):
+            if col == self.DATE_COL_INDEX:
+                date_edit = QDateEdit()
+                date_edit.setCalendarPopup(True)
+                date_edit.setDate(QDate.currentDate())
+                date_edit.setStyleSheet(f"color: {self.EMPTY_ROW_COLOR}")
+                self.table_widget.setCellWidget(row, col, date_edit)
+                # NOTE: Don't connect this until after setDate is called.
+                date_edit.dateChanged.connect(self._on_date_changed)
+            else:
+                line_edit = CustomLineEdit(row)
+                if col in (self.FROM_COL_INDEX, self.TO_COL_INDEX):
+                    line_edit.setCompleter(self.school_completer)
+                elif col == self.PURPOSE_COL_INDEX:
+                    line_edit.setCompleter(self.purpose_completer)
+                else:
+                    line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                    if col == self.PARKING_COL_INDEX:
+                        line_edit.setValidator(self.money_validator)
+                    else:
+                        line_edit.setValidator(self.mileage_validator)
+                    line_edit.returnPressed.connect(self._return_pressed)
 
-        style = self.table_widget.style()
-        option = QStyleOption()
-        option.initFrom(self.table_widget)
-
-        extra_h_space = self.ROW_COL_WIDTH
-        v = style.pixelMetric(QStyle.PixelMetric.PM_DefaultFrameWidth, option, self.table_widget)
-        extra_h_space += 2 * v
-
-        v = style.pixelMetric(QStyle.PixelMetric.PM_LayoutLeftMargin, option, self.table_widget)
-        extra_h_space += 2 * v
-
-        # Add extra space so the vertical scrollbar doesn't cause a horizontal scrollbar on Big Sur.
-        scrollbar_width = style.pixelMetric(QStyle.PixelMetric.PM_ScrollBarExtent)
-        extra_h_space += scrollbar_width
-
-        self.preferred_width = sum(x[1] for x in self.COLS) + extra_h_space
-        self.setMinimumSize(self.preferred_width,
-                self.table_widget.rowHeight(0) * (self.ROW_COUNT + 3) + 3)
-        self.setMaximumWidth(self.preferred_width)
-
-        if initial_file:
-            self.open_file(initial_file)
+                self.table_widget.setCellWidget(row, col, line_edit)
 
     def dragEnterEvent(self, event: QDragEnterEvent):
+        """
+        This, along with dropEvent(), allow documents to be opened by dropping them onto
+        the main window.
+        """
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
         else:
             event.ignore()
 
     def dropEvent(self, event: QDropEvent):
+        """
+        This, along with dragEnterEvent(), allow documents to be opened by dropping them onto
+        the main window.
+        """
         urls = event.mimeData().urls()
         if urls:
             file_path = urls[0].toLocalFile()
@@ -482,33 +510,6 @@ class MainWindow(QMainWindow):
                     event.ignore()
                     return
         event.accept()
-
-    def _add_table_row(self, row):
-        self.table_widget.insertRow(row)
-        for col in range(self.COL_COUNT):
-            if col == self.DATE_COL_INDEX:
-                date_edit = QDateEdit()
-                date_edit.setCalendarPopup(True)
-                date_edit.setDate(QDate.currentDate())
-                date_edit.setStyleSheet(f"color: {self.EMPTY_ROW_COLOR}")
-                self.table_widget.setCellWidget(row, col, date_edit)
-                # NOTE: Don't connect this until after setDate is called.
-                date_edit.dateChanged.connect(self._on_date_changed)
-            else:
-                line_edit = CustomLineEdit(row)
-                if col in (self.FROM_COL_INDEX, self.TO_COL_INDEX):
-                    line_edit.setCompleter(self.school_completer)
-                elif col == self.PURPOSE_COL_INDEX:
-                    line_edit.setCompleter(self.purpose_completer)
-                else:
-                    line_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                    if col == self.PARKING_COL_INDEX:
-                        line_edit.setValidator(self.money_validator)
-                    else:
-                        line_edit.setValidator(self.mileage_validator)
-                    line_edit.returnPressed.connect(self._return_pressed)
-
-                self.table_widget.setCellWidget(row, col, line_edit)
 
     def _on_date_changed(self, date):
         """
@@ -564,7 +565,9 @@ class MainWindow(QMainWindow):
                     "PDF Created", "Remember to review the PDF and sign it before submitting!",
                     QMessageBox.StandardButton.Ok)
 
-    def _read_table(self, strip_empty_rows=False):
+    def _read_table(self, strip_empty_rows=True):
+        # TODO: Read the table starting from the bottom and always strip empty rows.
+        #       When a non-empty line is found then stop stripping them unless strip_empty_rows.
         data = []
         for i in range(0, self.table_widget.rowCount()):
             row = []
@@ -584,7 +587,6 @@ class MainWindow(QMainWindow):
         today = QDate.currentDate()
         for i in range(self.table_widget.rowCount(), len(data)):
             self._add_table_row(i)
-
         for i, row in enumerate(data):
             for j in range(self.FROM_COL_INDEX, self.COL_COUNT):
                 self.table_widget.cellWidget(i, j).setText(row[j])
@@ -661,6 +663,7 @@ class MainWindow(QMainWindow):
         self.table_widget.setCurrentCell(0, 0)
 
     def open_file(self, file_path=None):
+        """Opens the specified file path"""
         if not file_path:
             data = self._read_table()
             if data != self.last_save:
@@ -713,11 +716,11 @@ class MainWindow(QMainWindow):
         self.doc_path = None
         self._update_save_item_and_title()
 
-    def _add_row(self):
+    def _grow_table(self):
         count = self.table_widget.rowCount()
         if count < self.MAX_ROWS:
             self._add_table_row(count)
-            self._update_table()
+            self._update_table(False)
         if count == (self.MAX_ROWS - 1):
             self.row_button.setEnabled(False)
 
@@ -839,6 +842,7 @@ class SmileApp(QApplication):
         self.main_window.show()
 
     def event(self, event: QEvent):
+        """React to FileOpen events to enable double-clicking on documents."""
         if event.type() == QEvent.Type.FileOpen:
             file_path = event.file()
             self.main_window.open_file(file_path)
