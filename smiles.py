@@ -296,7 +296,7 @@ class MainWindow(QMainWindow):
     ROW_COL_WIDTH = 25
 
     EMPTY_ROW_COLOR = 'gray'
-    DATE_STR_FORMAT = "MM/dd/yy"
+    DATE_STR_FORMAT = "MM/dd/yyyy"
 
     def __init__(self, data, settings, initial_file=None):
         super().__init__()
@@ -335,16 +335,16 @@ class MainWindow(QMainWindow):
         self.row_button.setShortcut("Ctrl+A")
         self.row_button.clicked.connect(self._grow_table)
 
-        self.pdf_button = QPushButton("Create PDF")
-        self.pdf_button.setShortcut("Ctrl+P")
-        self.pdf_button.clicked.connect(self._create_pdf)
+        pdf_button = QPushButton("Create PDF")
+        pdf_button.setShortcut("Ctrl+P")
+        pdf_button.clicked.connect(self._create_pdf)
 
         layout = QVBoxLayout(central_widget)
         layout.addWidget(self.table_widget)
         bottom_layout = QHBoxLayout()
         bottom_layout.addWidget(self.row_button)
         bottom_layout.addStretch(1)  # Add stretchable space to push button to the right
-        bottom_layout.addWidget(self.pdf_button)
+        bottom_layout.addWidget(pdf_button)
         layout.addLayout(bottom_layout)
         central_widget.setLayout(layout)
 
@@ -533,13 +533,32 @@ class MainWindow(QMainWindow):
                 "The table doesn't contain any useful data.",
                 QMessageBox.StandardButton.Ok)
             return
-        miles_col = [t[self.MILES_COL_INDEX] for t in table]
-        if '' in miles_col:
+        err_col_str = None
+        err_row = None
+        err_col = None
+        for i in range(0, len(table)):
+            if not table[i][self.FROM_COL_INDEX]:
+                err_col_str = 'From'
+                err_row = i
+                err_col = self.FROM_COL_INDEX
+                break
+            if not table[i][self.TO_COL_INDEX]:
+                err_col_str = 'To'
+                err_row = i
+                err_col = self.TO_COL_INDEX
+                break
+            if not table[i][self.MILES_COL_INDEX]:
+                err_col_str = 'Miles'
+                err_row = i
+                err_col = self.MILES_COL_INDEX
+                break
+        if err_col_str:
             QMessageBox.warning(self,
                 "Warning",
-                "At least one line doesn't have a value for the 'Miles' column.",
+                f"At least one line doesn't have a value for the '{err_col_str}' column.",
                 QMessageBox.StandardButton.Ok,
                 QMessageBox.StandardButton.Ok)
+            self.table_widget.setCurrentCell(err_row, err_col)
             return
 
         file_dialog = QFileDialog(self)
