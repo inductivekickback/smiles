@@ -29,7 +29,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QDateEdit,
 from pdf_writer import fill_form
 
 
-__version__ = "1.4.3"
+__version__ = "1.4.4"
 __date__ = "Sept '24"
 
 APP_NAME = "Smiles"
@@ -296,7 +296,8 @@ class MainWindow(QMainWindow):
     ROW_COL_WIDTH = 25
 
     EMPTY_ROW_COLOR = 'gray'
-    DATE_STR_FORMAT = "MM/dd/yyyy"
+    OLD_DATE_STR_FORMAT = 'MM/dd/yy'
+    DATE_STR_FORMAT = 'MM/dd/yyyy'
 
     def __init__(self, data, settings, initial_file=None):
         super().__init__()
@@ -536,18 +537,18 @@ class MainWindow(QMainWindow):
         err_col_str = None
         err_row = None
         err_col = None
-        for i in range(0, len(table)):
-            if not table[i][self.FROM_COL_INDEX]:
+        for i, row in enumerate(table):
+            if not row[self.FROM_COL_INDEX]:
                 err_col_str = 'From'
                 err_row = i
                 err_col = self.FROM_COL_INDEX
                 break
-            if not table[i][self.TO_COL_INDEX]:
+            if not row[self.TO_COL_INDEX]:
                 err_col_str = 'To'
                 err_row = i
                 err_col = self.TO_COL_INDEX
                 break
-            if not table[i][self.MILES_COL_INDEX]:
+            if not row[self.MILES_COL_INDEX]:
                 err_col_str = 'Miles'
                 err_row = i
                 err_col = self.MILES_COL_INDEX
@@ -606,7 +607,6 @@ class MainWindow(QMainWindow):
         return data
 
     def _write_table(self, data):
-        today = QDate.currentDate()
         for i in range(self.table_widget.rowCount(), len(data)):
             self._add_table_row(i)
         for i, row in enumerate(data):
@@ -615,9 +615,12 @@ class MainWindow(QMainWindow):
             date_widget = self.table_widget.cellWidget(i, self.DATE_COL_INDEX)
             if row[self.DATE_COL_INDEX]:
                 date = QDate.fromString(row[self.DATE_COL_INDEX], self.DATE_STR_FORMAT)
+                if not date.isValid():
+                    date = QDate.fromString(row[self.DATE_COL_INDEX], self.OLD_DATE_STR_FORMAT)
+                    date = date.addYears(100)
                 date_widget.setDate(date)
             else:
-                date_widget.setDate(today)
+                date_widget.setDate(QDate.currentDate())
 
     def _get_default_file_dialog_path(self):
         """Get the path to the user's Desktop unless a file has been recently opened or saved"""
