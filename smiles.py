@@ -29,8 +29,8 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QDateEdit,
 from pdf_writer import fill_form
 
 
-__version__ = "1.4.4"
-__date__ = "Sept '24"
+__version__ = "1.5.0"
+__date__ = "Nov '24"
 
 APP_NAME = "Smiles"
 APP_EXT = "rlm"
@@ -821,6 +821,16 @@ class MainWindow(QMainWindow):
                                 for j in range(self.FROM_COL_INDEX, self.COL_COUNT))
         return data == ''
 
+    def _find_distance(self, origin, dest):
+        dist = self.distances.get(origin, None)
+        if dist:
+            dist = dist.get(dest, None)
+            return dist
+        dist = self.distances.get(dest, None)
+        if dist:
+            dist = self.distances.get(origin, None)
+        return dist
+
     def _update_table(self, update_save_and_title=True):
         """Iterates through the entire table. For each line:
          -If the line is blank set the 'Date' text to gray, else default color
@@ -841,12 +851,12 @@ class MainWindow(QMainWindow):
                         self._set_custom_font(i, self.MILES_COL_INDEX, None, True)
                         miles.setReadOnly(True)
                     else:
-                        try:
-                            dist = self.distances[origin][dest]
+                        dist = self._find_distance(origin, dest)
+                        if dist:
                             miles.setText(str(dist))
                             self._set_custom_font(i, self.MILES_COL_INDEX, None, True)
                             miles.setReadOnly(True)
-                        except KeyError:
+                        else:
                             if miles.isReadOnly():
                                 miles.clear()
                             self._clear_custom_font(i, self.MILES_COL_INDEX)
