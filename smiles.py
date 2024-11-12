@@ -858,7 +858,7 @@ class MainWindow(QMainWindow):
             self._update_save_item_and_title(True)
 
 
-class SmileApp(QApplication):
+class SmilesApp(QApplication):
     """Subclass to allow event interception."""
 
     def __init__(self, argv, data, settings, file_path):
@@ -886,7 +886,7 @@ def main():
     if len(sys.argv) > 1:
         file_path = sys.argv[1]
 
-    app = SmileApp(sys.argv, data, settings, file_path)
+    app = SmilesApp(sys.argv, data, settings, file_path)
     sys.exit(app.exec())
 
 
