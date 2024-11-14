@@ -818,12 +818,18 @@ class MainWindow(QMainWindow):
         return data == ''
 
     def _find_distance(self, origin, dest):
+        """This method may be called multipled times during the entry of a location."""
         dist = self.distances.get(origin, None)
         if dist:
             dist = dist.get(dest, None)
             if dist:
                 return dist
-        return self.distances[dest][origin]
+        dist = self.distances.get(dest, None)
+        if dist:
+            dist = dist.get(origin, None)
+            if dist:
+                return dist
+        return None
 
     def _update_table(self, update_save_and_title=True):
         """Iterates through the entire table. For each line:
