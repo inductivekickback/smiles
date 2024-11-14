@@ -27,6 +27,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QDateEdit,
                                 QFileDialog, QStyle, QStyleOption, QFrame)
 
 from pdf_writer import fill_form
+from pdf_parser import parse_distance_table
 
 
 __version__ = "1.5.0"
@@ -36,10 +37,20 @@ APP_NAME = "Smiles"
 APP_EXT = "rlm"
 BASE_DIR = os.path.dirname(__file__)
 ARTEFACTS_DIR = "artefacts"
-DATA_FILE = "data.pickle"
 ICON_FILE = "mentor.png"
 FORM_FILE = "mileage.pdf"
+ADDITIONAL_FORM_FILE = "additional_mileage.pdf"
+DISTANCES_FILE = "distances.pdf"
 ABOUT_IMG_PATH = "support.png"
+
+# The table of 'official' distances between schools doesn't use abbreviations
+# so the old names will be expanded when they encountered in data files.
+UPDATED_SCHOOL_NAMES = {
+    "North": "North Eugene",
+    "South": "South Eugene",
+    "CI": "Chinese Immersion",
+    "YG": "Yujin Gakuen"
+}
 
 
 class CustomLineEdit(QLineEdit):
@@ -70,7 +81,7 @@ class AboutDialog(QDialog):
                     ("Stay curious!",), ("I shan't be doing that.",))
     QUOTE_AUTHOR = "-- The Mentor Team"
 
-    def __init__(self, data_date=None):
+    def __init__(self):
         super().__init__()
 
         self.setWindowTitle(f"About {APP_NAME}")
@@ -120,9 +131,7 @@ class AboutDialog(QDialog):
         vbox = QVBoxLayout()
         vbox.setSpacing(2)
         vbox.setContentsMargins(0, 0, 5, 0)
-        label = QLabel("Application:", alignment=Qt.AlignmentFlag.AlignRight)
-        vbox.addWidget(label)
-        label = QLabel("Distance calculation:", alignment=Qt.AlignmentFlag.AlignRight)
+        label = QLabel("Application:  ", alignment=Qt.AlignmentFlag.AlignRight)
         vbox.addWidget(label)
         widget = QWidget()
         widget.setLayout(vbox)
@@ -138,19 +147,6 @@ class AboutDialog(QDialog):
         label.setOpenExternalLinks(True)
         vbox.addWidget(label)
         label = QLabel(f'(Built: {__date__})', alignment=Qt.AlignmentFlag.AlignLeft)
-        vbox.addWidget(label)
-        label = QLabel("<a href='https://github.com/inductivekickback/mileage'>" +
-            "github.com/inductivekickback/mileage</a>", alignment=Qt.AlignmentFlag.AlignLeft)
-        label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction |
-                                            Qt.TextInteractionFlag.LinksAccessibleByMouse)
-        label.setOpenExternalLinks(True)
-        vbox.addWidget(label)
-        date_text = "(Compiled: "
-        if data_date:
-            date_text += data_date.strftime("%b '%y") + ")"
-        else:
-            date_text += "---)"
-        label = QLabel(f'{date_text}', alignment=Qt.AlignmentFlag.AlignLeft)
         vbox.addWidget(label)
         widget = QWidget()
         widget.setLayout(vbox)
@@ -278,7 +274,7 @@ class MainWindow(QMainWindow):
 
     ROW_COUNT = 11
     COL_COUNT = 6
-    MAX_ROWS = 45
+    MAX_ROWS = 56
 
     DATE_COL_INDEX = 0
     FROM_COL_INDEX = 1
@@ -301,12 +297,8 @@ class MainWindow(QMainWindow):
 
     def __init__(self, data, settings, initial_file=None):
         super().__init__()
-        if len(data) == 2:
-            self.data_date = None
-            self.addresses, self.distances = data
-        elif len(data) == 3:
-            self.data_date, self.addresses, self.distances = data
 
+        self.distances = data
         self.settings = settings
         self.doc_path = None
 
@@ -380,7 +372,7 @@ class MainWindow(QMainWindow):
         self.setMaximumWidth(preferred_width)
 
     def _create_completers_and_validators(self):
-        school_names = self.addresses.keys()
+        school_names = self.distances.keys()
         self.school_completer = QCompleter(school_names)
         self.school_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.school_completer.activated.connect(self._enter_pressed)
@@ -611,7 +603,11 @@ class MainWindow(QMainWindow):
             self._add_table_row(i)
         for i, row in enumerate(data):
             for j in range(self.FROM_COL_INDEX, self.COL_COUNT):
-                self.table_widget.cellWidget(i, j).setText(row[j])
+                text = row[j]
+                if j in (self.FROM_COL_INDEX, self.TO_COL_INDEX):
+                    if text in UPDATED_SCHOOL_NAMES.keys():
+                        text = UPDATED_SCHOOL_NAMES[text]
+                self.table_widget.cellWidget(i, j).setText(text)
             date_widget = self.table_widget.cellWidget(i, self.DATE_COL_INDEX)
             if row[self.DATE_COL_INDEX]:
                 date = QDate.fromString(row[self.DATE_COL_INDEX], self.DATE_STR_FORMAT)
@@ -758,7 +754,7 @@ class MainWindow(QMainWindow):
                 self.settings = settings
 
     def _show_about(self):
-        about_dialog = AboutDialog(self.data_date)
+        about_dialog = AboutDialog()
         about_dialog.exec()
 
     def _get_row_and_col(self):
@@ -825,11 +821,9 @@ class MainWindow(QMainWindow):
         dist = self.distances.get(origin, None)
         if dist:
             dist = dist.get(dest, None)
-            return dist
-        dist = self.distances.get(dest, None)
-        if dist:
-            dist = self.distances.get(origin, None)
-        return dist
+            if dist:
+                return dist
+        return self.distances[dest][origin]
 
     def _update_table(self, update_save_and_title=True):
         """Iterates through the entire table. For each line:
@@ -889,8 +883,7 @@ def main():
     """Loads settings and the mileage data structure from the disk and shows the GUI."""
     data = None
     settings = SettingsDialog.load_settings()
-    with open(os.path.join(BASE_DIR, ARTEFACTS_DIR, DATA_FILE), 'rb') as file:
-        data = pickle.load(file)
+    data = parse_distance_table(os.path.join(BASE_DIR, ARTEFACTS_DIR, DISTANCES_FILE))
 
     file_path = None
     if len(sys.argv) > 1:

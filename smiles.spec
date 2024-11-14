@@ -11,6 +11,8 @@ a = Analysis(
     binaries=[],
     datas=[('artefacts/data.pickle', 'artefacts'),
                 ('artefacts/mileage.pdf', 'artefacts'),
+                ('artefacts/additional_mileage.pdf', 'artefacts'),
+                ('artefacts/distances.pdf', 'artefacts'),
                 ('artefacts/support.png', 'artefacts'),
                 ('installer_bg.png', '.')],
     hiddenimports=[],

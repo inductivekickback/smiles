@@ -1,7 +1,5 @@
 """
-Fills text field values into fields in the 'Mileage Reimbursement' form that is located
-here: http://www.4j.lane.edu/files/forms/finsvc/4j_finsvc_mileage_reimbursement.pdf
-
+Fills text field values into the 4j Mileage Reimbursement form.
 
 Disclaimer of Warranty
 
@@ -17,11 +15,11 @@ from datetime import datetime
 import fitz
 
 
-__version__ = "1.0.2"
-__date__ = "Sept '24"
+__version__ = "1.1.0"
+__date__ = "Nov '24"
 
 NUM_COLS_PER_LINE = 6
-NUM_ROWS_PAGE_1 = 11
+NUM_ROWS_PAGE_1 = 22
 NUM_ROWS_PAGE_X = 34
 
 PARKING_COL_INDEX = 4
@@ -30,9 +28,8 @@ MILES_COL_INDEX = 5
 USER_INFO = [("Name", "txtEmpName"),
     ("Employee Number", "txtEmpNumber"),
     ("Building/Department", "txtSchool"),
-    ("In-District Mileage Account", "txtInDistAcct"),
-    ("Out-of-District Mileage Account", "txtOutDistAcct"),
-    ("Administrator's Name", "txtAdminName")]
+    ("Account #", "txtInDistAcct"),
+    ("Supervisor's Name", "Text1")]
 
 FIELD_NAME_FMTS = ["txtP{0}Date.{1}", "txtP{0}FromLoc.{1}",
                         "txtP{0}ToLoc.{1}", "txtP{0}Purpose.{1}",
