@@ -209,8 +209,8 @@ class AboutDialog(QDialog):
 class SettingsDialog(QDialog):
     """Maintains a simple 'settings' data structure across multiple platforms."""
 
-    SETTINGS = ["Name", "Employee Number", "Building/Department", "In-District Mileage Account",
-                "Out-of-District Mileage Account", "Administrator's Name"]
+    SETTINGS = ["Name", "Employee Number", "Building/Department",
+        "Account #", "Supervisor's Name"]
 
     def __init__(self, settings):
         super().__init__()
@@ -218,7 +218,7 @@ class SettingsDialog(QDialog):
         layout = QFormLayout()
         self.edits = {}
         for setting in self.SETTINGS:
-            edit = QLineEdit(settings[setting])
+            edit = QLineEdit(settings.get(setting, ''))
             edit.setFixedWidth(200)
             self.edits[setting] = edit
             layout.addRow(QLabel(f"{setting}:"), edit)
@@ -288,7 +288,7 @@ class MainWindow(QMainWindow):
     MILES_COL_INDEX = 5
 
     PURPOSE = ["Mentoring meeting", "Meeting", "Return to office", "Drop off materials",
-        "Classroom visit", "Office"]
+        "Classroom visit", "Office", "Observation"]
 
     COLS = [("Date", 100), ("From Location", 120), ("To Location", 120), ("Purpose", 250),
         ("Parking", 60), ("Miles", 60)]
