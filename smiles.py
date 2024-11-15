@@ -207,7 +207,7 @@ class SettingsDialog(QDialog):
     """Maintains a simple 'settings' data structure across multiple platforms."""
 
     SETTINGS = ["Name", "Employee Number", "Building/Department",
-        "Account #", "Supervisor's Name"]
+        "Account Number", "Supervisor's Name"]
 
     def __init__(self, settings):
         super().__init__()
@@ -284,7 +284,7 @@ class MainWindow(QMainWindow):
     MILES_COL_INDEX = 5
 
     PURPOSE = ["Mentoring meeting", "Meeting", "Return to office", "Drop off materials",
-        "Classroom visit", "Office", "Observation"]
+        "Classroom visit", "Office", "Observation", "Professional Development"]
 
     COLS = [("Date", 100), ("From Location", 120), ("To Location", 120), ("Purpose", 250),
         ("Parking", 60), ("Miles", 60)]

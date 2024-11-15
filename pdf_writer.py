@@ -30,7 +30,7 @@ MILES_COL_INDEX = 5
 USER_INFO = [("Name", "txtEmpName"),
     ("Employee Number", "txtEmpNumber"),
     ("Building/Department", "txtSchool"),
-    ("Account #", "txtInDistAcct"),
+    ("Account Number", "txtInDistAcct"),
     ("Supervisor's Name", "Text1")]
 
 FIELD_NAME_FMTS = ["txtP{0}Date.{1}", "txtP{0}FromLoc.{1}",
