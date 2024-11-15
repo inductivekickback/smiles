@@ -10,8 +10,6 @@ remains with you. In no event shall the software provider be liable for any dire
 incidental, special, consequential, or punitive damages whatsoever arising out of or in connection
 with the use or inability to use the software.
 """
-from datetime import datetime
-
 import fitz
 
 
@@ -40,7 +38,7 @@ def parse_distance_table(path):
                 data[o] = {}
             data[o][d] = val
     # The last row/col of the table doesn't get processed
-    # but add a key for the school regardless.
+    # so its school must be added separately.
     data[schools[-1]] = {}
     pdf.close()
     return data

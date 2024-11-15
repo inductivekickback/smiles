@@ -18,9 +18,11 @@ import fitz
 __version__ = "1.1.0"
 __date__ = "Nov '24"
 
+
 NUM_COLS_PER_LINE = 6
 NUM_ROWS_PAGE_1 = 22
-NUM_ROWS_PAGE_X = 34
+NUM_ROWS_PAGE_2 = 34
+MAX_ROWS = NUM_ROWS_PAGE_1 + NUM_ROWS_PAGE_2
 
 PARKING_COL_INDEX = 4
 MILES_COL_INDEX = 5
@@ -47,10 +49,11 @@ def _update_widget(widget, value):
             value = f"{value:0.1f}"
         elif 'Date' in widget.field_name:
             value = datetime.strptime(value, INPUT_STR_FORMAT).strftime(OUTPUT_STR_FORMAT)
-    except ValueError as ex:
+    except ValueError:
         pass
     widget.field_value = value
     widget.update()
+
 
 def _parse_float(value):
     try:
@@ -58,13 +61,39 @@ def _parse_float(value):
     except ValueError:
         return 0
 
-def fill_form(path, save_path, data):
+
+def _write_pdf(form_path, additional_form_path, save_path, form_data):
+    pdf = fitz.open(form_path)
+
+    for w in pdf.load_page(0).widgets():
+        if w.field_type_string == "Text":
+            if w.field_name in form_data:
+                _update_widget(w, form_data[w.field_name])
+
+    if additional_form_path:
+        # Widgets are not copied when using the insert_pdf method
+        # so they will be copied manually.
+        add_pdf = fitz.open(additional_form_path)
+        pdf.insert_pdf(add_pdf)
+        new_page = pdf.load_page(1)
+
+        for w in add_pdf.load_page(0).widgets():
+            if w.field_type_string == "Text":
+                new_page.add_widget(w)
+                if w.field_name in form_data:
+                    _update_widget(w, form_data[w.field_name])
+        add_pdf.close()
+
+    pdf.save(save_path)
+    pdf.close()
+
+
+def fill_form(form_path, additional_form_path, save_path, data):
     user_info = data['USER_INFO']
     table = data['TABLE']
 
-    pdf = fitz.open(path)
-    page_parking_totals = [0 for x in range(0, len(pdf))]
-    page_miles_totals = [0 for x in range(0, len(pdf))]
+    page_parking_totals = [0]
+    page_miles_totals = [0]
 
     values = {}
 
@@ -92,43 +121,36 @@ def fill_form(path, save_path, data):
         row += 1
         table_row += 1
 
-    for page_num in range(1, len(pdf)):
-        if table_row >= len(table):
-            break
+    if len(table) > NUM_ROWS_PAGE_1:
+        page_parking_totals.append(0)
+        page_miles_totals.append(0)
         row = 0
-        for i in range(0, NUM_ROWS_PAGE_X):
-            if table_row == len(table):
-                break
+        while table_row < len(table):
             for j in range(0, PARKING_COL_INDEX):
-                field_name = FIELD_NAME_FMTS[j].format(page_num+1, row)
+                field_name = FIELD_NAME_FMTS[j].format(2, row)
                 values[field_name] = table[table_row][j]
 
-            field_name = FIELD_NAME_FMTS[PARKING_COL_INDEX].format(page_num+1, row)
+            field_name = FIELD_NAME_FMTS[PARKING_COL_INDEX].format(2, row)
             value = _parse_float(table[table_row][PARKING_COL_INDEX])
             values[field_name] = value
-            page_parking_totals[page_num] += value
-    
-            field_name = FIELD_NAME_FMTS[MILES_COL_INDEX].format(page_num+1, row)
+            page_parking_totals[1] += value
+
+            field_name = FIELD_NAME_FMTS[MILES_COL_INDEX].format(2, row)
             value = _parse_float(table[table_row][MILES_COL_INDEX])
             values[field_name] = value
-            page_miles_totals[page_num] += value
+            page_miles_totals[1] += value
 
-            table_row += 1
             row += 1
+            table_row += 1
 
-    for i in range(0, len(pdf)):
+    for i in range(0, len(page_parking_totals)):
         values[f"txtP{i+1}TotParking"] = page_parking_totals[i]
         values[f"txtP{i+1}TotMiles"] = page_miles_totals[i]
 
     values["txtGrTotParking"] = sum(page_parking_totals)
     values["txtGrTotMiles"] = sum(page_miles_totals)
 
-    for i in range(0, len(pdf)):
-        page = pdf.load_page(i)
-        for w in page.widgets():
-            if w.field_type_string == "Text":
-                if values.get(w.field_name):
-                    _update_widget(w, values[w.field_name])
-
-    pdf.save(save_path)
-    pdf.close()
+    if len(table) > NUM_ROWS_PAGE_1:
+        _write_pdf(form_path, additional_form_path, save_path, values)
+    else:
+        _write_pdf(form_path, None, save_path, values)

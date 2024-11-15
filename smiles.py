@@ -13,7 +13,6 @@ incidental, special, consequential, or punitive damages whatsoever arising out o
 with the use or inability to use the software.
 """
 import sys
-import pickle
 import os
 import platform
 import json
@@ -26,7 +25,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QDateEdit,
                                 QHBoxLayout, QWidget, QFormLayout, QLabel, QDialogButtonBox,
                                 QFileDialog, QStyle, QStyleOption, QFrame)
 
-from pdf_writer import fill_form
+from pdf_writer import fill_form, MAX_ROWS
 from pdf_parser import parse_distance_table
 
 
@@ -36,12 +35,12 @@ __date__ = "Nov '24"
 APP_NAME = "Smiles"
 APP_EXT = "rlm"
 BASE_DIR = os.path.dirname(__file__)
-ARTEFACTS_DIR = "artefacts"
+ARTIFACTS_DIR = "artifacts"
 ICON_FILE = "mentor.png"
-FORM_FILE = "mileage.pdf"
-ADDITIONAL_FORM_FILE = "additional_mileage.pdf"
 DISTANCES_FILE = "distances.pdf"
 ABOUT_IMG_PATH = "support.png"
+FORM_FILE = "mileage.pdf"
+ADDITIONAL_FORM_FILE = "additional_mileage.pdf"
 
 # The table of 'official' distances between schools doesn't use abbreviations
 # so the old names will be expanded when they encountered in data files.
@@ -91,7 +90,7 @@ class AboutDialog(QDialog):
         label = QLabel(self)
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         label.setFixedSize(166, 256)
-        pixmap = QPixmap(os.path.join(BASE_DIR, ARTEFACTS_DIR, ABOUT_IMG_PATH))
+        pixmap = QPixmap(os.path.join(BASE_DIR, ARTIFACTS_DIR, ABOUT_IMG_PATH))
         scaled_pixmap = pixmap.scaled(label.size(),
             Qt.AspectRatioMode.KeepAspectRatio,
             Qt.TransformationMode.SmoothTransformation)
@@ -122,7 +121,7 @@ class AboutDialog(QDialog):
         label.setFont(font)
         right_layout.addWidget(label)
 
-        right_layout.addSpacing(30)
+        right_layout.addSpacing(60)
 
         hbox = QHBoxLayout()
         hbox.setSpacing(0)
@@ -155,6 +154,8 @@ class AboutDialog(QDialog):
         widget = QWidget()
         widget.setLayout(hbox)
         right_layout.addWidget(widget)
+
+        right_layout.addSpacing(20)
 
         quote_layout = QVBoxLayout(self)
         font.setPointSize(default_font_size + 10)
@@ -274,7 +275,6 @@ class MainWindow(QMainWindow):
 
     ROW_COUNT = 11
     COL_COUNT = 6
-    MAX_ROWS = 56
 
     DATE_COL_INDEX = 0
     FROM_COL_INDEX = 1
@@ -341,7 +341,7 @@ class MainWindow(QMainWindow):
         layout.addLayout(bottom_layout)
         central_widget.setLayout(layout)
 
-        icon = QIcon(os.path.join(BASE_DIR, ARTEFACTS_DIR, ICON_FILE))
+        icon = QIcon(os.path.join(BASE_DIR, ARTIFACTS_DIR, ICON_FILE))
         self.setWindowIcon(icon)
         self._add_menubar()
         self._set_min_and_max_window_size()
@@ -566,7 +566,9 @@ class MainWindow(QMainWindow):
                 file_path = file_path + ".pdf"
 
             try:
-                fill_form(os.path.join(BASE_DIR, ARTEFACTS_DIR, FORM_FILE), file_path, data)
+                form_path = os.path.join(BASE_DIR, ARTIFACTS_DIR, FORM_FILE)
+                add_form_path = os.path.join(BASE_DIR, ARTIFACTS_DIR, ADDITIONAL_FORM_FILE)
+                fill_form(form_path, add_form_path, file_path, data)
             except:
                 QMessageBox.critical(self,
                     "Error",
@@ -603,11 +605,7 @@ class MainWindow(QMainWindow):
             self._add_table_row(i)
         for i, row in enumerate(data):
             for j in range(self.FROM_COL_INDEX, self.COL_COUNT):
-                text = row[j]
-                if j in (self.FROM_COL_INDEX, self.TO_COL_INDEX):
-                    if text in UPDATED_SCHOOL_NAMES.keys():
-                        text = UPDATED_SCHOOL_NAMES[text]
-                self.table_widget.cellWidget(i, j).setText(text)
+                self.table_widget.cellWidget(i, j).setText(row[j])
             date_widget = self.table_widget.cellWidget(i, self.DATE_COL_INDEX)
             if row[self.DATE_COL_INDEX]:
                 date = QDate.fromString(row[self.DATE_COL_INDEX], self.DATE_STR_FORMAT)
@@ -708,6 +706,13 @@ class MainWindow(QMainWindow):
                 if os.path.exists(file_path):
                     with open(file_path, 'r', encoding='utf-8') as f:
                         data = json.load(f)
+                        for row in data:
+                            name = row[self.FROM_COL_INDEX]
+                            if name in UPDATED_SCHOOL_NAMES:
+                                row[self.FROM_COL_INDEX] = UPDATED_SCHOOL_NAMES[name]
+                            name = row[self.TO_COL_INDEX]
+                            if name in UPDATED_SCHOOL_NAMES:
+                                row[self.TO_COL_INDEX] = UPDATED_SCHOOL_NAMES[name]
                         self._clear_table()
                         self._write_table(data)
                         self.last_save = self._read_table()
@@ -739,10 +744,10 @@ class MainWindow(QMainWindow):
 
     def _grow_table(self):
         count = self.table_widget.rowCount()
-        if count < self.MAX_ROWS:
+        if count < MAX_ROWS:
             self._add_table_row(count)
             self._update_table(False)
-        if count == (self.MAX_ROWS - 1):
+        if count == (MAX_ROWS - 1):
             self.row_button.setEnabled(False)
 
     def _show_settings(self):
@@ -889,7 +894,7 @@ def main():
     """Loads settings and the mileage data structure from the disk and shows the GUI."""
     data = None
     settings = SettingsDialog.load_settings()
-    data = parse_distance_table(os.path.join(BASE_DIR, ARTEFACTS_DIR, DISTANCES_FILE))
+    data = parse_distance_table(os.path.join(BASE_DIR, ARTIFACTS_DIR, DISTANCES_FILE))
 
     file_path = None
     if len(sys.argv) > 1:
