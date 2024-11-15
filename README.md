@@ -14,9 +14,9 @@ The [current macOS version](https://github.com/inductivekickback/smiles/releases
 ### Building
 This application relies on the [pyqt6](https://pypi.org/project/PyQt6/), [pymupdf](https://pypi.org/project/PyMuPDF/), and [pyinstaller](https://pypi.org/project/pyinstaller/) projects. It was built with Python 3.8 but later Python versions are probably fine. The recommended process is to clone the repository and then:
 ```
-$ python3 -m venv smiles/env
+$ python3 -m venv smiles/venv
 $ cd smiles
-$ source env/bin/activate
+$ source venv/bin/activate
 $ pip install --upgrade pip
 $ pip install -r requirements.txt
 ```
