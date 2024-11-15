@@ -1,6 +1,6 @@
 """
 An optimized GUI developed by Rebecca Medley for the purpose of making her colleagues' lives
-easiser by simplifying the process of filling in a specific 'Mileage Reimbursement' form.
+easiser by simplifying the process of filling in a specific 'Mileage Reimbursement Request' form.
 
 
 Disclaimer of Warranty
