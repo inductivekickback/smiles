@@ -44,7 +44,11 @@ OUTPUT_STR_FORMAT = "%m/%d/%y"
 def _update_widget(widget, value):
     try:
         if 'Parking' in widget.field_name:
-            value = f"{value:0.2f}"
+            # Don't clutter the parking col with zeroes.
+            if value:
+                value = f"{value:0.2f}"
+            else:
+                value = ''
         elif 'Miles' in widget.field_name:
             value = f"{value:0.1f}"
         elif 'Date' in widget.field_name:
