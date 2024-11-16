@@ -29,7 +29,7 @@ from pdf_writer import fill_form, MAX_ROWS
 from pdf_parser import parse_distance_table
 
 
-__version__ = "1.5.0"
+__version__ = "1.5.1"
 __date__ = "Nov '24"
 
 APP_NAME = "Smiles"
@@ -85,6 +85,22 @@ class AboutDialog(QDialog):
 
         self.setWindowTitle(f"About {APP_NAME}")
 
+        left_container = QWidget()
+        left_container.setLayout(self._build_left_layout())
+
+        right_container = QWidget()
+        right_container.setLayout(self._build_right_layout())
+
+        layout = QHBoxLayout()
+        layout.addWidget(left_container)
+        layout.addWidget(right_container)
+
+        self.setLayout(layout)
+
+        self.adjustSize()
+        self.setFixedSize(self.size())
+
+    def _build_left_layout(self):
         left_layout = QVBoxLayout()
 
         label = QLabel(self)
@@ -100,62 +116,29 @@ class AboutDialog(QDialog):
         label = QLabel("medley_r@4j.lane.edu", alignment=Qt.AlignmentFlag.AlignCenter)
         left_layout.addWidget(label)
         left_layout.addStretch(1)
+        return left_layout
 
-        default_font_size = label.font().pointSize()
-
-        font = QFont()
-        font.setPointSize(default_font_size - 1)
-
-        label.setFont(font)
-
+    def _build_right_layout(self):
         right_layout = QVBoxLayout()
 
-        label = QLabel(f"{APP_NAME} v{__version__}",
-                            alignment=Qt.AlignmentFlag.AlignCenter)
-        font.setPointSize(default_font_size + 8)
+        label = QLabel("<a href='https://github.com/inductivekickback/smiles'>" +
+            f"{APP_NAME} v{__version__}</a>",
+            alignment=Qt.AlignmentFlag.AlignCenter)
+        label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction |
+                                            Qt.TextInteractionFlag.LinksAccessibleByMouse)
+        label.setOpenExternalLinks(True)
+        default_font_size = label.font().pointSize()
+        font = QFont()
+        font.setPointSize(default_font_size + 10)
         label.setFont(font)
         right_layout.addWidget(label)
 
         label = QLabel("by Rebecca Medley", alignment=Qt.AlignmentFlag.AlignCenter)
-        font.setPointSize(default_font_size + 5)
+        font.setPointSize(default_font_size + 4)
         label.setFont(font)
         right_layout.addWidget(label)
 
-        right_layout.addSpacing(60)
-
-        hbox = QHBoxLayout()
-        hbox.setSpacing(0)
-        hbox.setContentsMargins(0, 0, 0, 0)
-
-        vbox = QVBoxLayout()
-        vbox.setSpacing(2)
-        vbox.setContentsMargins(0, 0, 5, 0)
-        label = QLabel("Application:  ", alignment=Qt.AlignmentFlag.AlignRight)
-        vbox.addWidget(label)
-        widget = QWidget()
-        widget.setLayout(vbox)
-        hbox.addWidget(widget)
-
-        vbox = QVBoxLayout()
-        vbox.setSpacing(2)
-        vbox.setContentsMargins(0, 0, 0, 0)
-        label = QLabel("<a href='https://github.com/inductivekickback/smiles'>" +
-            "github.com/inductivekickback/smiles</a>", alignment=Qt.AlignmentFlag.AlignLeft)
-        label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction |
-                                            Qt.TextInteractionFlag.LinksAccessibleByMouse)
-        label.setOpenExternalLinks(True)
-        vbox.addWidget(label)
-        label = QLabel(f'(Built: {__date__})', alignment=Qt.AlignmentFlag.AlignLeft)
-        vbox.addWidget(label)
-        widget = QWidget()
-        widget.setLayout(vbox)
-        hbox.addWidget(widget)
-
-        widget = QWidget()
-        widget.setLayout(hbox)
-        right_layout.addWidget(widget)
-
-        right_layout.addSpacing(20)
+        right_layout.addSpacing(80)
 
         quote_layout = QVBoxLayout(self)
         font.setPointSize(default_font_size + 10)
@@ -181,26 +164,14 @@ class AboutDialog(QDialog):
 
         right_layout.addWidget(quote_container)
 
+        right_layout.addSpacing(20)
+
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
         button_box.button(QDialogButtonBox.StandardButton.Ok).setDefault(True)
         button_box.accepted.connect(self.close)
 
         right_layout.addWidget(button_box)
-
-        right_container = QWidget()
-        right_container.setLayout(right_layout)
-
-        left_container = QWidget()
-        left_container.setLayout(left_layout)
-
-        layout = QHBoxLayout()
-        layout.addWidget(left_container)
-        layout.addWidget(right_container)
-
-        self.setLayout(layout)
-
-        self.adjustSize()
-        self.setFixedSize(self.size())
+        return right_layout
 
 
 class SettingsDialog(QDialog):
