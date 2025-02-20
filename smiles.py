@@ -1,6 +1,6 @@
 """
 An optimized GUI developed by Rebecca Medley for the purpose of making her colleagues' lives
-easiser by simplifying the process of filling in a specific 'Mileage Reimbursement Request' form.
+easiser by simplifying the process of filling in a specific 'Mileage Reimbursement Request' form
 
 
 Disclaimer of Warranty
@@ -54,6 +54,7 @@ UPDATED_SCHOOL_NAMES = {
 ROW_COLORS = [QColor("#40FF0018"), QColor("#40FFA52C"), QColor("#40FFFF41"),
         QColor("#40008018"), QColor("#400000F9"), QColor("#4086007D")]
 
+
 class CustomLineEdit(QLineEdit):
     """Overrides the default paintEvent to draw box outlines in a specified color."""
 
@@ -73,7 +74,7 @@ class CustomLineEdit(QLineEdit):
 
 
 class CustomCheckBox(QWidget):
-    """Overrides the default paintEvent to draw box outlines in a specified color."""
+    """Wraps a QCheckBox so it looks similar to the CustomLineEdit and provides the same methods"""
 
     toggled = pyqtSignal(bool)
 
