@@ -19,28 +19,28 @@ import json
 import random
 from PyQt6.QtGui import (QAction, QIcon, QColor, QPainter, QPen, QDoubleValidator, QPixmap,
                                 QFont, QDragEnterEvent, QDropEvent)
-from PyQt6.QtCore import Qt, QDate, QEvent
+from PyQt6.QtCore import Qt, QDate, QEvent, pyqtSignal
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableWidget, QDateEdit, QDialog,
                                 QMessageBox, QLineEdit, QCompleter, QPushButton, QVBoxLayout,
                                 QHBoxLayout, QWidget, QFormLayout, QLabel, QDialogButtonBox,
-                                QFileDialog, QStyle, QStyleOption, QFrame)
+                                QFileDialog, QStyle, QStyleOption, QFrame, QCheckBox)
 
 from pdf_writer import fill_form, MAX_ROWS
 from pdf_parser import parse_distance_table
 
 
-__version__ = "1.5.1"
-__date__ = "Nov '24"
+__version__ = "1.6.0"
+__date__ = "Feb '25"
 
 APP_NAME = "Smiles"
 APP_EXT = "rlm"
 BASE_DIR = os.path.dirname(__file__)
 ARTIFACTS_DIR = "artifacts"
 ICON_FILE = "mentor.png"
-DISTANCES_FILE = "distances.pdf"
 ABOUT_IMG_PATH = "support.png"
-FORM_FILE = "mileage.pdf"
-ADDITIONAL_FORM_FILE = "additional_mileage.pdf"
+DISTANCES_FILE = "20250218_distances.pdf"
+FORM_FILE = "20250218_mileage.pdf"
+ADDITIONAL_FORM_FILE = "20250218_additional_mileage.pdf"
 
 # The table of 'official' distances between schools doesn't use abbreviations
 # so the old names will be expanded when they encountered in data files.
@@ -51,16 +51,15 @@ UPDATED_SCHOOL_NAMES = {
     "YG": "Yujin Gakuen"
 }
 
+ROW_COLORS = [QColor("#40FF0018"), QColor("#40FFA52C"), QColor("#40FFFF41"),
+        QColor("#40008018"), QColor("#400000F9"), QColor("#4086007D")]
 
 class CustomLineEdit(QLineEdit):
     """Overrides the default paintEvent to draw box outlines in a specified color."""
 
-    COLORS = [QColor("#40FF0018"), QColor("#40FFA52C"), QColor("#40FFFF41"), QColor("#40008018"),
-        QColor("#400000F9"), QColor("#4086007D")]
-
     def __init__(self, row_index, parent=None):
         super().__init__(parent)
-        self.color = self.COLORS[row_index % len(self.COLORS)]
+        self.color = ROW_COLORS[row_index % len(ROW_COLORS)]
 
     def paintEvent(self, event):
         """Override the default event to use a custom color."""
@@ -71,6 +70,71 @@ class CustomLineEdit(QLineEdit):
         painter.setPen(pen)
         painter.drawRect(self.rect().adjusted(0, 0, -1, -1))
         super().paintEvent(event)
+
+
+class CustomCheckBox(QWidget):
+    """Overrides the default paintEvent to draw box outlines in a specified color."""
+
+    toggled = pyqtSignal(bool)
+
+    def __init__(self, row_index, parent=None):
+        super().__init__(parent)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setAutoFillBackground(True)
+        self.color = ROW_COLORS[row_index % len(ROW_COLORS)]
+        self.layout = QHBoxLayout(self)
+        self.layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.checkbox = QCheckBox(self)
+        self.checkbox.stateChanged.connect(self._on_checkbox_toggled)
+        self.layout.addWidget(self.checkbox)
+
+    def paintEvent(self, event):
+        """Override the default event to use a custom color."""
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        pen = QPen(self.color)
+        pen.setWidth(2)
+        painter.setPen(pen)
+        painter.drawRect(self.rect().adjusted(0, 0, -1, -1))
+        super().paintEvent(event)
+
+    def focusInEvent(self, _):
+        """Focus the checkbox since this widget isn't interactive"""
+        self.checkbox.setFocus()
+
+    def keyPressEvent(self, event):
+        """Allow the user to toggle the checkbox using a the Space and Enter keys"""
+        if event.key() == Qt.Key.Key_Space:
+            self.checkbox.toggle()
+        elif event.key() == Qt.Key.Key_Enter or event.key() == Qt.Key.Key_Return:
+            self.checkbox.toggle()
+        else:
+            super().keyPressEvent(event)
+
+    def setText(self, text):
+        """Supply text-related methods so we don't have to handle checkboxes as a special case"""
+        if text == '1':
+            self.checkbox.setChecked(True)
+        else:
+            self.checkbox.setChecked(False)
+
+    def text(self):
+        """Supply text-related methods so we don't have to handle checkboxes as a special case"""
+        if self.checkbox.isChecked():
+            return '1'
+        return '0'
+
+    def isReadOnly(self):
+        """Supply text-related methods so we don't have to handle checkboxes as a special case"""
+        return False
+
+    def clear(self):
+        """Supply text-related methods so we don't have to handle checkboxes as a special case"""
+        self.checkbox.setChecked(False)
+
+    def _on_checkbox_toggled(self, state):
+        """Pass the checkbox's signal up to the table."""
+        self.toggled.emit(state)
 
 
 class AboutDialog(QDialog):
@@ -177,8 +241,7 @@ class AboutDialog(QDialog):
 class SettingsDialog(QDialog):
     """Maintains a simple 'settings' data structure across multiple platforms."""
 
-    SETTINGS = ["Name", "Employee Number", "Building/Department",
-        "Account Number", "Supervisor's Name"]
+    SETTINGS = ["Name", "Employee Number", "Building/Department", "Account Number"]
 
     def __init__(self, settings):
         super().__init__()
@@ -245,7 +308,7 @@ class MainWindow(QMainWindow):
     """Presents a table of QDateEdit and QLineEdit widgets."""
 
     ROW_COUNT = 11
-    COL_COUNT = 6
+    COL_COUNT = 7
 
     DATE_COL_INDEX = 0
     FROM_COL_INDEX = 1
@@ -253,12 +316,13 @@ class MainWindow(QMainWindow):
     PURPOSE_COL_INDEX = 3
     PARKING_COL_INDEX = 4
     MILES_COL_INDEX = 5
+    ROUND_TRIP_COL_INDEX = 6
 
     PURPOSE = ["Mentoring meeting", "Meeting", "Return to office", "Drop off materials",
         "Classroom visit", "Office", "Observation", "Professional Development"]
 
     COLS = [("Date", 100), ("From Location", 120), ("To Location", 120), ("Purpose", 250),
-        ("Parking", 60), ("Miles", 60)]
+        ("Parking", 60), ("Miles", 60), ("Round Trip", 75)]
 
     ROW_COL_WIDTH = 25
 
@@ -409,11 +473,15 @@ class MainWindow(QMainWindow):
             if col == self.DATE_COL_INDEX:
                 date_edit = QDateEdit()
                 date_edit.setCalendarPopup(True)
-                date_edit.setDate(QDate.currentDate())
                 date_edit.setStyleSheet(f"color: {self.EMPTY_ROW_COLOR}")
-                self.table_widget.setCellWidget(row, col, date_edit)
+                date_edit.setDate(QDate.currentDate())
                 # NOTE: Don't connect this until after setDate is called.
                 date_edit.dateChanged.connect(self._on_date_changed)
+                self.table_widget.setCellWidget(row, col, date_edit)
+            elif col == self.ROUND_TRIP_COL_INDEX:
+                checkbox = CustomCheckBox(row)
+                checkbox.toggled.connect(self._on_checkbox_toggled)
+                self.table_widget.setCellWidget(row, col, checkbox)
             else:
                 line_edit = CustomLineEdit(row)
                 if col in (self.FROM_COL_INDEX, self.TO_COL_INDEX):
@@ -488,6 +556,10 @@ class MainWindow(QMainWindow):
                 if self._row_is_empty(i):
                     self.table_widget.cellWidget(i, self.DATE_COL_INDEX).setDate(date)
 
+    def _on_checkbox_toggled(self, _):
+        """Ensure that the File->Save menu is available after toggling a checkbox."""
+        self._update_save_item_and_title(True)
+
     def _create_pdf(self):
         table = self._read_table(True)
         data = {"USER_INFO": self.settings, "TABLE": table}
@@ -558,9 +630,10 @@ class MainWindow(QMainWindow):
         for i in range(self.table_widget.rowCount() - 1, -1, -1):
             row = []
             for j in range(1, self.COL_COUNT):
-                row.append(self.table_widget.cellWidget(i, j).text())
+                w = self.table_widget.cellWidget(i, j)
+                row.append(w.text())
             # Don't preserve dates on lines that are otherwise empty.
-            if row != ['', '', '', '', '']:
+            if row != ['', '', '', '', '', '0']:
                 found_non_empty_row = True
                 d = self.table_widget.cellWidget(i, self.DATE_COL_INDEX).date()
                 row.insert(0, d.toString(self.DATE_STR_FORMAT))
@@ -575,7 +648,7 @@ class MainWindow(QMainWindow):
         for i in range(self.table_widget.rowCount(), len(data)):
             self._add_table_row(i)
         for i, row in enumerate(data):
-            for j in range(self.FROM_COL_INDEX, self.COL_COUNT):
+            for j in range(self.FROM_COL_INDEX, len(row)):
                 self.table_widget.cellWidget(i, j).setText(row[j])
             date_widget = self.table_widget.cellWidget(i, self.DATE_COL_INDEX)
             if row[self.DATE_COL_INDEX]:
@@ -790,7 +863,7 @@ class MainWindow(QMainWindow):
 
     def _row_is_empty(self, row):
         data = ''.join(self.table_widget.cellWidget(row, j).text()
-                                for j in range(self.FROM_COL_INDEX, self.COL_COUNT))
+                                for j in range(self.FROM_COL_INDEX, (self.COL_COUNT - 1)))
         return data == ''
 
     def _find_distance(self, origin, dest):

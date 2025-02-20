@@ -19,23 +19,29 @@ __version__ = "1.1.0"
 __date__ = "Nov '24"
 
 
-NUM_COLS_PER_LINE = 6
 NUM_ROWS_PAGE_1 = 22
 NUM_ROWS_PAGE_2 = 34
 MAX_ROWS = NUM_ROWS_PAGE_1 + NUM_ROWS_PAGE_2
 
 PARKING_COL_INDEX = 4
 MILES_COL_INDEX = 5
+ROUND_TRIP_COL_INDEX = 6
+
 
 USER_INFO = [("Name", "txtEmpName"),
     ("Employee Number", "txtEmpNumber"),
     ("Building/Department", "txtSchool"),
-    ("Account Number", "txtInDistAcct"),
-    ("Supervisor's Name", "Text1")]
+    ("Account Number", "txtInDistAcct")]
 
-FIELD_NAME_FMTS = ["txtP{0}Date.{1}", "txtP{0}FromLoc.{1}",
-                        "txtP{0}ToLoc.{1}", "txtP{0}Purpose.{1}",
-                        "txtP{0}AmtParking.{1}", "txtP{0}Miles.{1}"]
+FIELD_NAME_FMTS = [
+    "txtP{0}Date.{1}", # NOTE: Page indices start at 1 but widget indices start at 0.
+    "txtP{0}FromLoc.{1}",
+    "txtP{0}ToLoc.{1}",
+    "txtP{0}Purpose.{1}",
+    "txtP{0}AmtParking.{1}",
+    "txtP{0}Miles.{1}",
+    "Check Box{0}" # NOTE: Check Box indices start at 1.
+]
 
 INPUT_STR_FORMAT = "%m/%d/%Y" # Equivalent to QDate's toString("MM/dd/yyyy")
 OUTPUT_STR_FORMAT = "%m/%d/%y"
@@ -53,6 +59,11 @@ def _update_widget(widget, value):
             value = f"{value:0.1f}"
         elif 'Date' in widget.field_name:
             value = datetime.strptime(value, INPUT_STR_FORMAT).strftime(OUTPUT_STR_FORMAT)
+        elif 'Check' in widget.field_name:
+            if value == '0':
+                value = 'No'
+            else:
+                value = 'Yes'
     except ValueError:
         pass
     widget.field_value = value
@@ -68,9 +79,8 @@ def _parse_float(value):
 
 def _write_pdf(form_path, additional_form_path, save_path, form_data):
     pdf = fitz.open(form_path)
-
     for w in pdf.load_page(0).widgets():
-        if w.field_type_string == "Text":
+        if w.field_type_string in ("Text", "CheckBox"):
             if w.field_name in form_data:
                 _update_widget(w, form_data[w.field_name])
 
@@ -107,10 +117,17 @@ def fill_form(form_path, additional_form_path, save_path, data):
     page_len = len(table) if len(table) < NUM_ROWS_PAGE_1 else NUM_ROWS_PAGE_1
     table_row = 0
     row = 0
+    data_has_rt_checkbox = len(table[table_row]) > ROUND_TRIP_COL_INDEX
     while table_row < page_len:
         for j in range(0, PARKING_COL_INDEX):
             field_name = FIELD_NAME_FMTS[j].format(1, row)
             values[field_name] = table[table_row][j]
+
+        round_trip = False
+        if data_has_rt_checkbox:
+            field_name = FIELD_NAME_FMTS[ROUND_TRIP_COL_INDEX].format(table_row + 1)
+            values[field_name] = table[table_row][ROUND_TRIP_COL_INDEX]
+            round_trip = values[field_name] != '0'
 
         field_name = FIELD_NAME_FMTS[PARKING_COL_INDEX].format(1, row)
         value = _parse_float(table[table_row][PARKING_COL_INDEX])
@@ -121,6 +138,8 @@ def fill_form(form_path, additional_form_path, save_path, data):
         value = _parse_float(table[table_row][MILES_COL_INDEX])
         values[field_name] = value
         page_miles_totals[0] += value
+        if round_trip:
+            page_miles_totals[0] += value
 
         row += 1
         table_row += 1
@@ -134,6 +153,12 @@ def fill_form(form_path, additional_form_path, save_path, data):
                 field_name = FIELD_NAME_FMTS[j].format(2, row)
                 values[field_name] = table[table_row][j]
 
+            round_trip = False
+            if data_has_rt_checkbox:
+                field_name = FIELD_NAME_FMTS[ROUND_TRIP_COL_INDEX].format(table_row + 1)
+                values[field_name] = table[table_row][ROUND_TRIP_COL_INDEX]
+                round_trip = values[field_name] != '0'
+
             field_name = FIELD_NAME_FMTS[PARKING_COL_INDEX].format(2, row)
             value = _parse_float(table[table_row][PARKING_COL_INDEX])
             values[field_name] = value
@@ -143,6 +168,8 @@ def fill_form(form_path, additional_form_path, save_path, data):
             value = _parse_float(table[table_row][MILES_COL_INDEX])
             values[field_name] = value
             page_miles_totals[1] += value
+            if round_trip:
+                page_miles_totals[1] += value
 
             row += 1
             table_row += 1
@@ -151,8 +178,8 @@ def fill_form(form_path, additional_form_path, save_path, data):
         values[f"txtP{i+1}TotParking"] = page_parking_totals[i]
         values[f"txtP{i+1}TotMiles"] = page_miles_totals[i]
 
-    values["txtGrTotParking"] = sum(page_parking_totals)
-    values["txtGrTotMiles"] = sum(page_miles_totals)
+    values["txtP1&2TotParking"] = sum(page_parking_totals)
+    values["txtP1&P2TotMiles"] = sum(page_miles_totals)
 
     if len(table) > NUM_ROWS_PAGE_1:
         _write_pdf(form_path, additional_form_path, save_path, values)
