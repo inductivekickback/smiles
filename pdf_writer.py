@@ -83,7 +83,9 @@ def _write_pdf(form_path, additional_form_path, save_path, form_data):
         if w.field_type_string in ("Text", "CheckBox"):
             if w.field_name in form_data:
                 _update_widget(w, form_data[w.field_name])
-
+                if w.field_type_string == "CheckBox":
+                    w.field_flags |= fitz.PDF_FIELD_IS_READ_ONLY
+                    w.update()
     if additional_form_path:
         # Widgets are not copied when using the insert_pdf method
         # so they will be copied manually.
