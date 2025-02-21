@@ -26,5 +26,5 @@ $ python3 smiles.py PATH-TO-DOCUMENT
 ```
 Use pyinstaller to build the macOS bundle:
 ```
-$ python3 pyinstaller smiles.spec
+$ pyinstaller smiles.spec
 ```
