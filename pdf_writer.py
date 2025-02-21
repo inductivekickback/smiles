@@ -32,6 +32,9 @@ PARKING_COL_INDEX = 4
 MILES_COL_INDEX = 5
 ROUND_TRIP_COL_INDEX = 6
 
+DEFAULT_FONT_SIZE = 9.5
+FONT_SIZE_DECREMENT = 0.5
+
 
 USER_INFO = [("Name", "txtEmpName"),
     ("Employee Number", "txtEmpNumber"),
@@ -862,6 +865,18 @@ PAGE_2_WIDGETS = {
 }
 
 
+def _insert_text(page, widget_rect, value, alignment):
+    """The bounding boxes of the widgets in the original PDF are not uniform."""
+    font_size = DEFAULT_FONT_SIZE
+    finished = False
+    while not finished:
+        unused_space = page.insert_textbox(widget_rect, value, fontsize=font_size, align=alignment)
+        if unused_space < 0:
+            font_size -= FONT_SIZE_DECREMENT
+        else:
+            finished = True
+
+
 def _update_widget(page, field_name, widget_rect, value):
     alignment = fitz.TEXT_ALIGN_LEFT
     try:
@@ -893,7 +908,7 @@ def _update_widget(page, field_name, widget_rect, value):
     # Redraw the widget's outline (since we removed all of the actual widgets).
     page.draw_rect(widget_rect, color=(0, 0, 0), fill=(1, 1, 1), overlay=True)
     if value:
-        page.insert_textbox(widget_rect, value, fontsize=9, align=alignment)
+        _insert_text(page, widget_rect, value, alignment)
 
 
 def _parse_float(value):
