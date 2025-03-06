@@ -6,7 +6,7 @@
  - Parses the table of 'official' distances between buildings that is embedded in the mileage form itself
  - A vanilla copy of the mileage form is bundled with the application and a new PDF is created every time it's filled in -- this precludes annoying errors that can happen when the same PDF is edited multiple times.
  - Auto-complete is enabled for school and purpose columns
- - Documents can be opened and saved to allow for incremental progress before creating the final PDF.
+ - Documents can be opened and saved to allow for incremental progress before creating the final PDF
 
 ### Releases
 The [current macOS version](https://github.com/inductivekickback/smiles/releases/) is tested on Big Sur and newer (Intel and Apple silicon). It's not a problem if your IT department prevents you from dragging things to the Applications folder -- drag this to your Desktop and run it from there instead.
